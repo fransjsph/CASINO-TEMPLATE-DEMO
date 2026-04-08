@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>LGOLUX - BACCARAT VIP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #d4af37; --bg-table: #064e3b; --player: #3b82f6; --banker: #ef4444; --tie: #10b981; }
+    body { margin: 0; background: #000; color: white; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; display: flex; justify-content: center;}
+    
+    .game-container { 
+        width: 100%; max-width: 420px; height: 100dvh; display: flex; flex-direction: column; background: #0f172a; position: relative; overflow: hidden;
+    }
+    
+    .top-bar { 
+        padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; 
+        background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%); 
+        position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+        padding-top: calc(15px + env(safe-area-inset-top, 0px));
+    }
+    .btn-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); color: white; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 12px;}
+    .saldo-box { background: rgba(0,0,0,0.8); border: 1px solid var(--gold); padding: 8px 18px; border-radius: 10px; font-weight: 800; color: var(--gold); box-shadow: 0 0 10px rgba(212,175,55,0.3);}
+
+    /* MEJA BACCARAT (HIJAU) */
+    .screen { flex: 1; position: relative; background: radial-gradient(ellipse at top, #059669 0%, var(--bg-table) 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 50px;}
+    
+    .table-arc { position: absolute; bottom: 0; width: 120%; height: 60%; border-top: 3px solid rgba(212,175,55,0.4); border-radius: 50% 50% 0 0; background: rgba(0,0,0,0.1);}
+
+    /* KARTU & SKOR */
+    .board { display: flex; justify-content: space-around; width: 100%; z-index: 5; margin-bottom: 20px;}
+    .side { text-align: center; }
+    .side h3 { margin: 0 0 10px 0; text-transform: uppercase; font-size: 16px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);}
+    .side .score { font-size: 40px; font-weight: 900; background: rgba(0,0,0,0.5); width: 60px; height: 60px; line-height: 60px; border-radius: 50%; margin: 0 auto; border: 2px solid; }
+    
+    .p-side h3 { color: var(--player); } .p-side .score { border-color: var(--player); }
+    .b-side h3 { color: var(--banker); } .b-side .score { border-color: var(--banker); }
+
+    .card-box { width: 60px; height: 85px; background: white; border-radius: 5px; color: black; font-size: 30px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 10px auto; box-shadow: 2px 2px 10px rgba(0,0,0,0.5); opacity: 0; transform: translateY(-20px); transition: 0.5s;}
+    .card-box.show { opacity: 1; transform: translateY(0); }
+    
+    .status-msg { font-size: 18px; font-weight: 900; color: #fff; z-index: 10; margin-top: 20px; background: rgba(0,0,0,0.8); padding: 10px 25px; border-radius: 30px; text-align: center; border: 1px solid var(--gold); box-shadow: 0 0 15px rgba(212,175,55,0.5); display: none;}
+
+    /* PANEL BETTING BAWAH */
+    .panel { background: #020617; padding: 20px; border-top: 2px solid var(--gold); z-index: 10; border-radius: 25px 25px 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));}
+    
+    input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; font-size: 16px; font-weight: 800; text-align: center; outline: none; margin-bottom: 15px;}
+    
+    .chips { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px;}
+    .chips::-webkit-scrollbar { height: 4px; }
+    .chips::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    .chips button { flex: 0 0 auto; background: rgba(212,175,55,0.1); color: var(--gold); border: 1px solid rgba(212,175,55,0.3); padding: 10px 15px; border-radius: 10px; font-weight: 800; font-size: 12px;}
+    
+    .bet-btn-row { display: flex; gap: 10px;}
+    .btn-action { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: 900; font-size: 14px; cursor: pointer; text-transform: uppercase; color: white; transition: 0.1s;}
+    .btn-action:active { transform: translateY(2px); }
+    
+    .btn-p { background: linear-gradient(180deg, #60a5fa, var(--player)); box-shadow: 0 5px 15px rgba(59,130,246,0.4); }
+    .btn-t { background: linear-gradient(180deg, #34d399, var(--tie)); box-shadow: 0 5px 15px rgba(16,185,129,0.4); }
+    .btn-b { background: linear-gradient(180deg, #f87171, var(--banker)); box-shadow: 0 5px 15px rgba(239,68,68,0.4); }
+    
+    .disabled { filter: grayscale(1); opacity: 0.5; pointer-events: none;}
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="top-bar">
+      <a href="/" class="btn-back">🔙 LOBI LGO</a>
+      <div class="saldo-box">🪙 <span id="n-c">0</span></div>
+    </div>
+
+    <div class="screen">
+      <div class="table-arc"></div>
+      
+      <div class="board">
+          <div class="side p-side">
+              <h3>PLAYER (x2)</h3>
+              <div id="c-p" class="card-box">?</div>
+              <div id="score-p" class="score">0</div>
+          </div>
+          <div class="side b-side">
+              <h3>BANKER (x1.95)</h3>
+              <div id="c-b" class="card-box">?</div>
+              <div id="score-b" class="score">0</div>
+          </div>
+      </div>
+      
+      <div id="status-msg" class="status-msg">MEMBAGIKAN KARTU...</div>
+    </div>
+
+    <div class="panel" id="bet-panel">
+      <input type="text" id="bet-input" placeholder="Masukkan Bet (Koin)" oninput="formatRupiah(this)">
+      
+      <div class="chips">
+        <button onclick="setBet(1000)">1K</button> <button onclick="setBet(5000)">5K</button>
+        <button onclick="setBet(10000)">10K</button> <button onclick="setBet(50000)">50K</button> 
+        <button onclick="setBet(100000)">100K</button> <button onclick="setBet(500000)">500K</button> <button onclick="setBet(1000000)">MAX</button>
+      </div>
+
+      <div class="bet-btn-row">
+          <button class="btn-action btn-p" onclick="playGame('player')">PLAYER</button>
+          <button class="btn-action btn-t" onclick="playGame('tie')">TIE (x8)</button>
+          <button class="btn-action btn-b" onclick="playGame('banker')">BANKER</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket;
+    fetch('/api/me').then(r => r.json()).then(d => { if(!d.loggedIn) window.location.href = '/'; else masuk(d); });
+    function formatRupiah(obj) { let val = obj.value.replace(/[^0-9]/g, ''); obj.value = val ? parseInt(val).toLocaleString('id-ID') : ''; }
+    function setBet(val) { document.getElementById('bet-input').value = val.toLocaleString('id-ID'); }
+
+    function masuk(d) {
+      document.getElementById('n-c').innerText = d.coin.toLocaleString('id-ID');
+      socket = io();
+      socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID'));
+      
+      socket.on('game_result', r => {
+          if (r.game !== 'baccarat') return;
+          if (r.status === 'error') {
+              alert(r.msg);
+              resetUI();
+              return;
+          }
+          
+          // Animasi buka kartu palsu
+          document.getElementById('c-p').innerText = r.pScore;
+          document.getElementById('c-b').innerText = r.bScore;
+          document.getElementById('score-p').innerText = r.pScore;
+          document.getElementById('score-b').innerText = r.bScore;
+          
+          let msgBox = document.getElementById('status-msg');
+          msgBox.innerText = r.msg;
+          msgBox.style.color = r.status === 'win' ? '#10b981' : '#ef4444';
+          
+          setTimeout(resetUI, 4000); // Reset ke awal setelah 4 detik
+      });
+    }
+
+    function playGame(choice) {
+        let b = parseInt(document.getElementById('bet-input').value.replace(/\./g, ''));
+        const curr = parseInt(document.getElementById('n-c').innerText.replace(/\./g, '')) || 0;
+        
+        if(!b || b <= 0) return alert("Isi bet dulu bosku!");
+        if(b > 1000000) return alert("Max Bet 1.000.000!");
+        if(b > curr) return alert("Saldo kurang!");
+        
+        document.getElementById('bet-panel').classList.add('disabled');
+        document.getElementById('status-msg').style.display = 'block';
+        document.getElementById('status-msg').innerText = '⏳ MEMBAGIKAN KARTU...';
+        document.getElementById('status-msg').style.color = '#fff';
+        
+        document.getElementById('c-p').classList.add('show');
+        document.getElementById('c-b').classList.add('show');
+        
+        socket.emit('play_baccarat', { betAmount: b, choice: choice });
+    }
+    
+    function resetUI() {
+        document.getElementById('bet-panel').classList.remove('disabled');
+        document.getElementById('status-msg').style.display = 'none';
+        document.getElementById('c-p').classList.remove('show');
+        document.getElementById('c-b').classList.remove('show');
+        setTimeout(() => {
+            document.getElementById('c-p').innerText = '?';
+            document.getElementById('c-b').innerText = '?';
+            document.getElementById('score-p').innerText = '0';
+            document.getElementById('score-b').innerText = '0';
+        }, 500);
+    }
+  </script>
+</body>
+</html>
