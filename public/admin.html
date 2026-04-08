@@ -53,6 +53,8 @@
         <input type="number" id="r-c">
         <label style="font-size: 12px; color: #888;">SpinWheel Multiplier Rate (%)</label>
         <input type="number" id="r-s">
+        <label style="font-size: 12px; color: #888;">Astronaut Win Rate (%)</label>
+        <input type="number" id="r-a" style="background:#0f172a; border:1px solid #334155; color:#fff; padding:12px; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom: 15px;">
         <button class="btn-red" onclick="saveRTP()">UPDATE WIN RATE</button>
       </div>
 
@@ -168,7 +170,14 @@
         document.getElementById('tx-list').innerHTML = h || '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Antrean Kosong</td></tr>';
       });
       
-      socket.on('rtp_data', d => { document.getElementById('r-r').value=d.roulette; document.getElementById('r-c').value=d.coinflip; document.getElementById('r-s').value=d.spinwheel; });
+      // TAMBAHAN ASTRONAUT RTP DATA
+      socket.on('rtp_data', d => { 
+        document.getElementById('r-r').value=d.roulette; 
+        document.getElementById('r-c').value=d.coinflip; 
+        document.getElementById('r-s').value=d.spinwheel; 
+        document.getElementById('r-a').value=d.astronaut || 30; // SET ASTRONAUT WINRATE
+      });
+
       socket.on('deposit_approved_success', () => socket.emit('get_pending_deposits'));
       socket.on('admin_new_notif', () => socket.emit('get_pending_deposits'));
       socket.on('notif_msg', m => alert(m));
@@ -231,7 +240,15 @@
         if(alasan) socket.emit('admin_reject_tx', { id: id, reason: alasan });
     }
 
-    function saveRTP() { socket.emit('update_rtp', { roulette:document.getElementById('r-r').value, coinflip:document.getElementById('r-c').value, spinwheel:document.getElementById('r-s').value }); }
+    // TAMBAHAN ASTRONAUT SAVE RTP
+    function saveRTP() { 
+        socket.emit('update_rtp', { 
+            roulette:document.getElementById('r-r').value, 
+            coinflip:document.getElementById('r-c').value, 
+            spinwheel:document.getElementById('r-s').value,
+            astronaut:document.getElementById('r-a').value // TAMBAHAN SAVE ASTRONAUT
+        }); 
+    }
   </script>
 </body>
 </html>
