@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>LGOLUX - ROULETTE PRO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #d4af37; --red: #ef4444; --black: #111; }
+    body { margin: 0; background: #000; color: white; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; display: flex; justify-content: center;}
+    
+    .game-container { width: 100%; max-width: 420px; height: 100dvh; display: flex; flex-direction: column; background: #0f172a; position: relative; overflow: hidden;}
+    
+    .top-bar { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%); position: absolute; top: 0; left: 0; right: 0; z-index: 10; padding-top: calc(15px + env(safe-area-inset-top, 0px)); }
+    .btn-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); color: white; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 12px;}
+    .saldo-box { background: rgba(0,0,0,0.8); border: 1px solid var(--gold); padding: 8px 18px; border-radius: 10px; font-weight: 800; color: var(--gold); box-shadow: 0 0 10px rgba(212,175,55,0.3);}
+
+    .screen { flex: 1; background: radial-gradient(circle, #334155 0%, #020617 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;}
+    
+    /* ANIMASI STRIP ROULETTE BESAR */
+    .v-box { width: 90%; height: 80px; border: 4px solid var(--gold); border-radius: 15px; position: relative; overflow: hidden; box-shadow: 0 0 30px rgba(212,175,55,0.2); background: #000;}
+    .v-box::after { content:'▼'; position:absolute; top:-5px; left:50%; transform:translateX(-50%); color:white; z-index:2; font-size:25px; text-shadow: 0 2px 5px black;}
+    
+    .v-strip { width: 2000px; height: 100%; background: repeating-linear-gradient(90deg, var(--red) 0 60px, var(--black) 60px 120px); transition: transform 2s cubic-bezier(0.25, 0.1, 0.25, 1);}
+    .v-strip.run { animation: spinRoulette 0.1s infinite linear; }
+    @keyframes spinRoulette { from { transform: translateX(0); } to { transform: translateX(-120px); } }
+    
+    .status-msg { font-size: 20px; font-weight: 900; color: #fff; margin-top: 30px; text-shadow: 0 0 10px rgba(0,0,0,0.8); height: 30px;}
+
+    .panel { background: #020617; padding: 20px; border-top: 2px solid var(--gold); z-index: 10; border-radius: 25px 25px 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));}
+    input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; font-size: 16px; font-weight: 800; text-align: center; outline: none; margin-bottom: 15px;}
+    .chips { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px;}
+    .chips::-webkit-scrollbar { height: 4px; }
+    .chips button { flex: 0 0 auto; background: rgba(212,175,55,0.1); color: var(--gold); border: 1px solid rgba(212,175,55,0.3); padding: 10px 15px; border-radius: 10px; font-weight: 800; font-size: 12px;}
+    
+    .bet-btn-row { display: flex; gap: 10px;}
+    .btn-action { flex: 1; padding: 20px; border-radius: 12px; border: 2px solid #000; font-weight: 900; font-size: 18px; cursor: pointer; text-transform: uppercase; color: white; transition: 0.1s;}
+    .btn-action:active { transform: scale(0.95); }
+    .btn-r { background: var(--red); box-shadow: inset 0 -5px 0 rgba(0,0,0,0.3); }
+    .btn-b { background: var(--black); box-shadow: inset 0 -5px 0 rgba(255,255,255,0.2); }
+    
+    .disabled { filter: grayscale(1); opacity: 0.5; pointer-events: none;}
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="top-bar">
+      <a href="/" class="btn-back">🔙 LOBI LGO</a>
+      <div class="saldo-box">🪙 <span id="n-c">0</span></div>
+    </div>
+
+    <div class="screen">
+      <div class="v-box"><div id="v-strip" class="v-strip"></div></div>
+      <div id="status-msg" class="status-msg">PILIH MERAH ATAU HITAM</div>
+    </div>
+
+    <div class="panel" id="bet-panel">
+      <input type="text" id="bet-input" placeholder="Masukkan Bet (Koin)" oninput="formatRupiah(this)">
+      <div class="chips">
+        <button onclick="setBet(1000)">1K</button> <button onclick="setBet(5000)">5K</button>
+        <button onclick="setBet(10000)">10K</button> <button onclick="setBet(50000)">50K</button> 
+        <button onclick="setBet(100000)">100K</button> <button onclick="setBet(1000000)">MAX</button>
+      </div>
+      <div class="bet-btn-row">
+          <button class="btn-action btn-r" onclick="playGame('merah')">MERAH (x2)</button>
+          <button class="btn-action btn-b" onclick="playGame('hitam')">HITAM (x2)</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket;
+    fetch('/api/me').then(r => r.json()).then(d => { if(!d.loggedIn) window.location.href = '/'; else masuk(d); });
+    function formatRupiah(obj) { let val = obj.value.replace(/[^0-9]/g, ''); obj.value = val ? parseInt(val).toLocaleString('id-ID') : ''; }
+    function setBet(val) { document.getElementById('bet-input').value = val.toLocaleString('id-ID'); }
+
+    function masuk(d) {
+      document.getElementById('n-c').innerText = d.coin.toLocaleString('id-ID');
+      socket = io();
+      socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID'));
+      
+      socket.on('game_result', r => {
+          if (r.game !== 'roulette') return;
+          const strip = document.getElementById('v-strip');
+          strip.classList.remove('run');
+          
+          if (r.status === 'error') {
+              alert(r.msg);
+              resetUI();
+              return;
+          }
+          
+          let msgBox = document.getElementById('status-msg');
+          msgBox.innerText = r.msg;
+          msgBox.style.color = r.status === 'win' ? '#10b981' : '#ef4444';
+          
+          // Akal-akalan visual stop Roulette
+          let stopPos = r.msg.includes('MERAH') ? -60 : -120;
+          strip.style.transform = `translateX(${stopPos}px)`;
+          
+          setTimeout(resetUI, 3000);
+      });
+    }
+
+    function playGame(color) {
+        let b = parseInt(document.getElementById('bet-input').value.replace(/\./g, ''));
+        const curr = parseInt(document.getElementById('n-c').innerText.replace(/\./g, '')) || 0;
+        
+        if(!b || b <= 0) return alert("Isi bet dulu bosku!");
+        if(b > 1000000) return alert("Max Bet 1.000.000!");
+        if(b > curr) return alert("Saldo kurang!");
+        
+        document.getElementById('bet-panel').classList.add('disabled');
+        document.getElementById('status-msg').innerText = '🎲 MEMUTAR...';
+        document.getElementById('status-msg').style.color = '#fff';
+        
+        const strip = document.getElementById('v-strip');
+        strip.style.transform = 'none';
+        setTimeout(() => strip.classList.add('run'), 10);
+        
+        socket.emit('play_roulette', { betAmount: b, color: color });
+    }
+    
+    function resetUI() {
+        document.getElementById('bet-panel').classList.remove('disabled');
+        document.getElementById('status-msg').innerText = 'PILIH MERAH ATAU HITAM';
+        document.getElementById('status-msg').style.color = '#fff';
+    }
+  </script>
+</body>
+</html>
