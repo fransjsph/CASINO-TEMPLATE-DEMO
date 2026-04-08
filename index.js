@@ -10,8 +10,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-let rtpBandar = { roulette: 40, coinflip: 40, spinwheel: 30, astronaut: 30 };
-let forceAstroMulti = null; // VARIABLE BUAT SIMPAN SETTINGAN 1X PAKAI
+// RTP DEFAULT TAMBAH SPACEMAN & BACCARAT
+let rtpBandar = { roulette: 40, coinflip: 40, spinwheel: 30, spaceman: 30, baccarat: 40 };
+let forceSpacemanMulti = null; 
 
 const dbPath = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, 'lgolux.db') : './lgolux.db';
 const db = new sqlite3.Database(dbPath);
@@ -32,14 +33,22 @@ app.use(sessionMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
 io.engine.use(sessionMiddleware);
 
+// --- ROUTING FULL SCREEN GAMES ---
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/spaceman', (req, res) => res.sendFile(path.join(__dirname, 'public', 'spaceman.html')));
+app.get('/roulette', (req, res) => res.sendFile(path.join(__dirname, 'public', 'roulette.html')));
+app.get('/coinflip', (req, res) => res.sendFile(path.join(__dirname, 'public', 'coinflip.html')));
+app.get('/spinwheel', (req, res) => res.sendFile(path.join(__dirname, 'public', 'spinwheel.html')));
+app.get('/baccarat', (req, res) => res.sendFile(path.join(__dirname, 'public', 'baccarat.html')));
+
 app.post('/api/register', (req, res) => {
     const { username, password, role } = req.body;
     if (!username || !password) return res.json({ success: false, msg: '⚠️ Username dan Password wajib diisi!' });
     const userRole = (role === 'admin' && req.session.role === 'admin') ? 'admin' : 'member'; 
     bcrypt.hash(password, 10, (err, hash) => {
         db.run(`INSERT INTO users (username, password, role) VALUES (?, ?, ?)`, [username, hash, userRole], function(err) {
-            if (err) return res.json({ success: false, msg: '❌ Username sudah dipakai bosku!' });
-            res.json({ success: true, msg: '✅ Akun berhasil dibuat! Silakan Login.' });
+            if (err) return res.json({ success: false, msg: '❌ Username sudah dipakai!' });
+            res.json({ success: true, msg: '✅ Akun berhasil dibuat!' });
         });
     });
 });
@@ -70,18 +79,16 @@ app.get('/api/me', (req, res) => {
 
 app.get('/api/history', (req, res) => {
     if (!req.session.userId) return res.json([]);
-    db.all(`SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC LIMIT 15`, [req.session.userId], (err, rows) => {
-        res.json(rows || []);
-    });
+    db.all(`SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC LIMIT 15`, [req.session.userId], (err, rows) => res.json(rows || []));
 });
 
 app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ success: true }); });
 
+// API ADMIN & TRANSAKSI (Sama seperti sebelumnya)
 app.get('/api/admin/users', (req, res) => {
     if (req.session.role !== 'admin') return res.status(403).send();
     db.all(`SELECT id, username, coin, status FROM users WHERE role = 'member' ORDER BY id DESC`, (err, rows) => res.json(rows));
 });
-
 app.post('/api/admin/update-user', (req, res) => {
     if (req.session.role !== 'admin') return res.status(403).send();
     const { id, coin, status, password, note, username } = req.body;
@@ -90,20 +97,16 @@ app.post('/api/admin/update-user', (req, res) => {
         const diff = coin - user.coin;
         if (diff !== 0) {
             const adjType = diff > 0 ? 'BONUS ADMIN' : 'POTONGAN ADMIN';
-            db.run(`INSERT INTO transactions (user_id, username, type, amount, status, note) VALUES (?, ?, ?, ?, 'SUCCESS', ?)`, [id, username, adjType, Math.abs(diff), note || 'Penyesuaian Saldo']);
+            db.run(`INSERT INTO transactions (user_id, username, type, amount, status, note) VALUES (?, ?, ?, ?, 'SUCCESS', ?)`, [id, username, adjType, Math.abs(diff), note]);
         }
         if (password && password.trim() !== "") {
-            bcrypt.hash(password, 10, (err, hash) => {
-                db.run(`UPDATE users SET password = ?, coin = ?, status = ? WHERE id = ?`, [hash, coin, status, id]);
-            });
+            bcrypt.hash(password, 10, (err, hash) => db.run(`UPDATE users SET password = ?, coin = ?, status = ? WHERE id = ?`, [hash, coin, status, id]));
         } else {
             db.run(`UPDATE users SET coin = ?, status = ? WHERE id = ?`, [coin, status, id]);
         }
         res.json({ success: true });
     });
 });
-
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 io.on('connection', (socket) => {
     const session = socket.request.session;
@@ -112,26 +115,8 @@ io.on('connection', (socket) => {
     socket.join(`user_${session.userId}`);
     if (session.role === 'admin') socket.join('admins');
 
-    socket.on('get_rtp', () => { if (session.role === 'admin') socket.emit('rtp_data', rtpBandar); });
-    
-    socket.on('update_rtp', (newRtp) => { 
-        if (session.role === 'admin') { 
-            rtpBandar = newRtp; 
-            io.to('admins').emit('rtp_data', rtpBandar); 
-            socket.emit('notif_msg', '😈 Win Rate Normal Diperbarui!'); 
-        } 
-    });
-
-    // EVENT BARU: TEMBAK FORCE MULTIPLIER 1X PAKAI
-    socket.on('force_astro', (val) => {
-        if (session.role === 'admin') {
-            forceAstroMulti = parseFloat(val);
-            socket.emit('notif_msg', `🚀 SUPER JP AKTIF: Ronde Astronaut berikutnya pasti tembus x${forceAstroMulti}!`);
-        }
-    });
-
     socket.on('req_deposit', (amount) => {
-        db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'DEPOSIT', ?, 'PENDING')`, [session.userId, session.username, amount], function() {
+        db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'DEPOSIT', ?, 'PENDING')`, [session.userId, session.username, amount], () => {
             io.to('admins').emit('admin_new_notif');
             socket.emit('notif_msg', `✅ Request ${amount.toLocaleString('id-ID')} terkirim!`);
         });
@@ -139,142 +124,33 @@ io.on('connection', (socket) => {
 
     socket.on('req_wd', (amount) => {
         db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (!user || user.coin < amount) return socket.emit('notif_msg', '❌ Saldo tidak cukup bosku!');
+            if (!user || user.coin < amount) return socket.emit('notif_msg', '❌ Saldo tidak cukup!');
             db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [amount, session.userId], () => {
                 db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'WD', ?, 'PENDING')`, [session.userId, session.username, amount]);
                 io.to(`user_${session.userId}`).emit('update_coin', user.coin - amount);
                 io.to('admins').emit('admin_new_notif');
-                socket.emit('notif_msg', '💸 WD Sedang Diproses Admin!');
+                socket.emit('notif_msg', '💸 WD Sedang Diproses!');
             });
         });
     });
 
-    socket.on('admin_approve_tx', (id) => {
-        if (session.role !== 'admin') return;
-        db.get(`SELECT * FROM transactions WHERE id = ? AND status = 'PENDING'`, [id], (err, tx) => {
-            if (!tx) return;
-            db.run(`UPDATE transactions SET status = 'SUCCESS' WHERE id = ?`, [id]);
-            if (tx.type === 'DEPOSIT') {
-                db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [tx.amount, tx.user_id], () => {
-                    db.get(`SELECT coin FROM users WHERE id = ?`, [tx.user_id], (err, u) => io.to(`user_${tx.user_id}`).emit('update_coin', u.coin));
-                });
-            }
-            socket.emit('deposit_approved_success');
-        });
-    });
-
-    socket.on('admin_reject_tx', (data) => {
-        if (session.role !== 'admin') return;
-        const { id, reason } = data;
-        db.get(`SELECT * FROM transactions WHERE id = ? AND status = 'PENDING'`, [id], (err, tx) => {
-            if (!tx) return;
-            db.run(`UPDATE transactions SET status = 'REJECTED', note = ? WHERE id = ?`, [reason, id]);
-            if (tx.type === 'WD') {
-                db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [tx.amount, tx.user_id], () => {
-                    db.get(`SELECT coin FROM users WHERE id = ?`, [tx.user_id], (err, u) => io.to(`user_${tx.user_id}`).emit('update_coin', u.coin));
-                });
-            }
-            socket.emit('deposit_approved_success');
-        });
-    });
-
-    socket.on('get_pending_deposits', () => {
-        if (session.role !== 'admin') return;
-        db.all(`SELECT * FROM transactions WHERE status = 'PENDING' ORDER BY date DESC`, (err, rows) => socket.emit('admin_deposit_list', rows));
-    });
-
-    // --- GAMES (ROULETTE, COINFLIP, SPINWHEEL) ---
-    socket.on('play_roulette', (data) => {
-        const { betAmount, color } = data;
-        if (betAmount > 100000) return;
-        db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (user.status === 'BLOKIR' || user.coin < betAmount) return;
-            const newCoin = user.coin - betAmount;
-            db.run(`UPDATE users SET coin = ? WHERE id = ?`, [newCoin, session.userId], () => {
-                socket.emit('update_coin', newCoin);
-                setTimeout(() => {
-                    const isWin = Math.random() < (rtpBandar.roulette / 100);
-                    const resColor = isWin ? color : (color === 'merah' ? 'hitam' : 'merah');
-                    if (isWin) {
-                        db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [betAmount * 2, session.userId], () => {
-                            db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
-                                io.to(`user_${session.userId}`).emit('update_coin', u.coin);
-                                socket.emit('game_result', { game: 'roulette', status: 'win', msg: `🎉 WIN! Keluar ${resColor.toUpperCase()}` });
-                            });
-                        });
-                    } else socket.emit('game_result', { game: 'roulette', status: 'lose', msg: `💀 ZONK! Keluar ${resColor.toUpperCase()}` });
-                }, 1500);
-            });
-        });
-    });
-
-    socket.on('play_coinflip', (data) => {
-        const { betAmount, guess } = data;
-        if (betAmount > 100000) return;
-        db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (user.status === 'BLOKIR' || user.coin < betAmount) return;
-            const newCoin = user.coin - betAmount;
-            db.run(`UPDATE users SET coin = ? WHERE id = ?`, [newCoin, session.userId], () => {
-                socket.emit('update_coin', newCoin);
-                setTimeout(() => {
-                    const isWin = Math.random() < (rtpBandar.coinflip / 100);
-                    const res = isWin ? guess : (guess === 'angka' ? 'gambar' : 'angka');
-                    if (isWin) {
-                        db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [Math.floor(betAmount * 1.9), session.userId], () => {
-                            db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
-                                io.to(`user_${session.userId}`).emit('update_coin', u.coin);
-                                socket.emit('game_result', { game: 'coinflip', status: 'win', msg: `🎉 JP! Mendarat di ${res.toUpperCase()}` });
-                            });
-                        });
-                    } else socket.emit('game_result', { game: 'coinflip', status: 'lose', msg: `💀 ZONK! Mendarat di ${res.toUpperCase()}` });
-                }, 1500);
-            });
-        });
-    });
-
-    socket.on('play_spinwheel', (data) => {
-        const betAmount = data.betAmount;
-        if (betAmount > 100000) return;
-        db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (user.status === 'BLOKIR' || user.coin < betAmount) return;
-            db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [betAmount, session.userId], () => {
-                socket.emit('update_coin', user.coin - betAmount);
-                setTimeout(() => {
-                    const isWin = Math.random() < (rtpBandar.spinwheel / 100);
-                    let multi = isWin ? [1.5, 2, 5][Math.floor(Math.random()*3)] : [0, 0, 0.5, 1][Math.floor(Math.random()*4)];
-                    const win = Math.floor(betAmount * multi);
-                    if (win > 0) {
-                        db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [win, session.userId], () => {
-                            db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
-                                io.to(`user_${session.userId}`).emit('update_coin', u.coin);
-                                socket.emit('game_result', { game: 'spinwheel', status: multi >= 2 ? 'win' : 'lose', msg: `🎡 x${multi}! Dapat ${win.toLocaleString('id-ID')}` });
-                            });
-                        });
-                    } else socket.emit('game_result', { game: 'spinwheel', status: 'lose', msg: `🎡 ZONK! Keluar x0` });
-                }, 2000);
-            });
-        });
-    });
-
-    // --- GAME ASTRONAUT DENGAN FORCE MULTIPLIER ---
-    socket.on('play_astronaut', (data) => {
+    // --- GAME BARU: SPACEMAN FOMO LOGIC ---
+    socket.on('play_spaceman', (data) => {
         const { betAmount } = data;
-        if (betAmount > 100000) return;
+        if (betAmount > 1000000) return;
         db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (user.status === 'BLOKIR' || user.coin < betAmount) return;
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'spaceman', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
             
             db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [betAmount, session.userId], () => {
                 socket.emit('update_coin', user.coin - betAmount);
                 
                 let crashPoint = 1.00; 
 
-                // CEK APAKAH ADA SETTINGAN FORCE DARI ADMIN (1X PAKAI)
-                if (forceAstroMulti !== null) {
-                    crashPoint = forceAstroMulti;
-                    forceAstroMulti = null; // LANGSUNG DIRESET SETELAH DIPAKAI
+                if (forceSpacemanMulti !== null) {
+                    crashPoint = forceSpacemanMulti;
+                    forceSpacemanMulti = null; 
                 } else {
-                    // KALAU GAK ADA FORCE, PAKAI RTP BIASA
-                    const isWin = Math.random() < (rtpBandar.astronaut / 100);
+                    const isWin = Math.random() < (rtpBandar.spaceman / 100);
                     if (isWin) {
                         crashPoint = 1.00 + (Math.random() * 5); 
                         if(Math.random() < 0.2) crashPoint += Math.random() * 10; 
@@ -287,35 +163,47 @@ io.on('connection', (socket) => {
                 
                 crashPoint = parseFloat(crashPoint.toFixed(2));
                 
-                socket.astroActive = true;
-                socket.astroCrash = crashPoint;
-                socket.astroBet = betAmount;
+                socket.spaceActive = true;
+                socket.spaceCrash = crashPoint;
+                socket.spaceBet = betAmount;
+                socket.hasCashedOut = false; // Flag buat ngecek dia udah narik dana belum
 
-                socket.emit('start_astronaut', { crashPoint: crashPoint });
+                // Kirim titik hancur ke HP player buat dijalankan animasinya
+                socket.emit('start_spaceman', { crashPoint: crashPoint });
             });
         });
     });
 
-    socket.on('cashout_astronaut', (data) => {
-        if(!socket.astroActive) return; 
+    socket.on('cashout_spaceman', (data) => {
+        if(!socket.spaceActive || socket.hasCashedOut) return; 
         const { stoppedAt } = data;
         
-        if (stoppedAt <= socket.astroCrash) {
-            socket.astroActive = false;
-            const winAmount = Math.floor(socket.astroBet * stoppedAt);
+        // Cek murni apakah dia narik SEBELUM crash point
+        if (stoppedAt <= socket.spaceCrash) {
+            socket.hasCashedOut = true; // Tandai udah narik, TAPI roket tetep jalan
+            const winAmount = Math.floor(socket.spaceBet * stoppedAt);
             db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [winAmount, session.userId], () => {
                 db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
                     io.to(`user_${session.userId}`).emit('update_coin', u.coin);
-                    socket.emit('game_result', { game: 'astronaut', status: 'win', msg: `🎉 CAIR! Dapat 🪙 ${winAmount.toLocaleString('id-ID')}` });
+                    socket.emit('spaceman_cashed_out', { win: winAmount, multi: stoppedAt });
                 });
             });
         }
     });
 
-    socket.on('crash_astronaut', () => {
-        socket.astroActive = false;
-        socket.emit('game_result', { game: 'astronaut', status: 'lose', msg: `💥 ROKET MELEDAK!` });
+    socket.on('crash_spaceman', () => {
+        socket.spaceActive = false;
+        // Kalau dia belum cashout pas meledak, berarti zonk
+        if (!socket.hasCashedOut) {
+            socket.emit('game_result', { game: 'spaceman', status: 'lose', msg: `💥 SPACEMAN HANCUR!` });
+        }
     });
+
+    // Dummy rute game lain (akan dibahas di Part 2)
+    socket.on('play_roulette', (d) => {});
+    socket.on('play_coinflip', (d) => {});
+    socket.on('play_spinwheel', (d) => {});
+    socket.on('play_baccarat', (d) => {});
 });
 
 server.listen(process.env.PORT || 3000, '0.0.0.0', () => console.log(`🚀 LGOLUX LIVE!`));
