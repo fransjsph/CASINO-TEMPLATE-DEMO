@@ -10,9 +10,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// RTP DEFAULT TAMBAH SPACEMAN & BACCARAT
+// FIX NAMA VARIABEL RTP BIAR MATCH SAMA ADMIN
 let rtpBandar = { roulette: 40, coinflip: 40, spinwheel: 30, spaceman: 30, baccarat: 40 };
-let forceSpacemanMulti = null; 
+let forceSpacemanMulti = null; // VARIABLE BUAT NANGKEP FORCE JP 1X PAKAI
 
 const dbPath = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, 'lgolux.db') : './lgolux.db';
 const db = new sqlite3.Database(dbPath);
@@ -84,7 +84,7 @@ app.get('/api/history', (req, res) => {
 
 app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ success: true }); });
 
-// API ADMIN & TRANSAKSI (Sama seperti sebelumnya)
+// API ADMIN
 app.get('/api/admin/users', (req, res) => {
     if (req.session.role !== 'admin') return res.status(403).send();
     db.all(`SELECT id, username, coin, status FROM users WHERE role = 'member' ORDER BY id DESC`, (err, rows) => res.json(rows));
@@ -115,6 +115,38 @@ io.on('connection', (socket) => {
     socket.join(`user_${session.userId}`);
     if (session.role === 'admin') socket.join('admins');
 
+    // RTP DATA
+    socket.on('get_rtp', () => { 
+        if (session.role === 'admin') {
+            // Ngirim data ke admin, pastikan variabel astronaut juga dikirim biar admin ga bingung
+            socket.emit('rtp_data', { ...rtpBandar, astronaut: rtpBandar.spaceman }); 
+        }
+    });
+
+    socket.on('update_rtp', (newRtp) => { 
+        if (session.role === 'admin') { 
+            rtpBandar.roulette = newRtp.roulette;
+            rtpBandar.coinflip = newRtp.coinflip;
+            rtpBandar.spinwheel = newRtp.spinwheel;
+            // FIX TYPO ADMIN: Nangkep data astronaut atau spaceman, disimpen jadi spaceman
+            rtpBandar.spaceman = newRtp.astronaut || newRtp.spaceman || 30; 
+            
+            io.to('admins').emit('rtp_data', { ...rtpBandar, astronaut: rtpBandar.spaceman }); 
+            socket.emit('notif_msg', '😈 Win Rate Normal Diperbarui!');
+        } 
+    });
+
+    // ==========================================
+    // INI DIA YANG KEMARIN HILANG BOSKU!
+    // EVENT BUAT NANGKEP TEMBAKAN FORCE JP ASTRONAUT
+    // ==========================================
+    socket.on('force_astro', (val) => {
+        if (session.role === 'admin') {
+            forceSpacemanMulti = parseFloat(val);
+            socket.emit('notif_msg', `🚀 SUPER JP AKTIF: Spaceman berikutnya PASTI tembus x${forceSpacemanMulti}!`);
+        }
+    });
+
     socket.on('req_deposit', (amount) => {
         db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'DEPOSIT', ?, 'PENDING')`, [session.userId, session.username, amount], () => {
             io.to('admins').emit('admin_new_notif');
@@ -134,7 +166,41 @@ io.on('connection', (socket) => {
         });
     });
 
-    // --- GAME BARU: SPACEMAN FOMO LOGIC ---
+    socket.on('admin_approve_tx', (id) => {
+        if (session.role !== 'admin') return;
+        db.get(`SELECT * FROM transactions WHERE id = ? AND status = 'PENDING'`, [id], (err, tx) => {
+            if (!tx) return;
+            db.run(`UPDATE transactions SET status = 'SUCCESS' WHERE id = ?`, [id]);
+            if (tx.type === 'DEPOSIT') {
+                db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [tx.amount, tx.user_id], () => {
+                    db.get(`SELECT coin FROM users WHERE id = ?`, [tx.user_id], (err, u) => io.to(`user_${tx.user_id}`).emit('update_coin', u.coin));
+                });
+            }
+            socket.emit('deposit_approved_success');
+        });
+    });
+
+    socket.on('admin_reject_tx', (data) => {
+        if (session.role !== 'admin') return;
+        const { id, reason } = data;
+        db.get(`SELECT * FROM transactions WHERE id = ? AND status = 'PENDING'`, [id], (err, tx) => {
+            if (!tx) return;
+            db.run(`UPDATE transactions SET status = 'REJECTED', note = ? WHERE id = ?`, [reason, id]);
+            if (tx.type === 'WD') {
+                db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [tx.amount, tx.user_id], () => {
+                    db.get(`SELECT coin FROM users WHERE id = ?`, [tx.user_id], (err, u) => io.to(`user_${tx.user_id}`).emit('update_coin', u.coin));
+                });
+            }
+            socket.emit('deposit_approved_success');
+        });
+    });
+
+    socket.on('get_pending_deposits', () => {
+        if (session.role !== 'admin') return;
+        db.all(`SELECT * FROM transactions WHERE status = 'PENDING' ORDER BY date DESC`, (err, rows) => socket.emit('admin_deposit_list', rows));
+    });
+
+    // --- GAME SPACEMAN FOMO LOGIC DENGAN FORCE JP ---
     socket.on('play_spaceman', (data) => {
         const { betAmount } = data;
         if (betAmount > 1000000) return;
@@ -146,10 +212,12 @@ io.on('connection', (socket) => {
                 
                 let crashPoint = 1.00; 
 
+                // CEK APAKAH ADMIN MENEKAN TOMBOL FORCE JP
                 if (forceSpacemanMulti !== null) {
-                    crashPoint = forceSpacemanMulti;
-                    forceSpacemanMulti = null; 
+                    crashPoint = forceSpacemanMulti; // Set nilai crash sesuai input admin
+                    forceSpacemanMulti = null; // Langsung di-reset biar ronde berikutnya balik normal
                 } else {
+                    // KALAU GAK ADA FORCE JP, PAKE LOGIKA RTP NORMAL
                     const isWin = Math.random() < (rtpBandar.spaceman / 100);
                     if (isWin) {
                         crashPoint = 1.00 + (Math.random() * 5); 
@@ -166,9 +234,8 @@ io.on('connection', (socket) => {
                 socket.spaceActive = true;
                 socket.spaceCrash = crashPoint;
                 socket.spaceBet = betAmount;
-                socket.hasCashedOut = false; // Flag buat ngecek dia udah narik dana belum
+                socket.hasCashedOut = false; 
 
-                // Kirim titik hancur ke HP player buat dijalankan animasinya
                 socket.emit('start_spaceman', { crashPoint: crashPoint });
             });
         });
@@ -178,9 +245,8 @@ io.on('connection', (socket) => {
         if(!socket.spaceActive || socket.hasCashedOut) return; 
         const { stoppedAt } = data;
         
-        // Cek murni apakah dia narik SEBELUM crash point
         if (stoppedAt <= socket.spaceCrash) {
-            socket.hasCashedOut = true; // Tandai udah narik, TAPI roket tetep jalan
+            socket.hasCashedOut = true; 
             const winAmount = Math.floor(socket.spaceBet * stoppedAt);
             db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [winAmount, session.userId], () => {
                 db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
@@ -193,13 +259,12 @@ io.on('connection', (socket) => {
 
     socket.on('crash_spaceman', () => {
         socket.spaceActive = false;
-        // Kalau dia belum cashout pas meledak, berarti zonk
         if (!socket.hasCashedOut) {
             socket.emit('game_result', { game: 'spaceman', status: 'lose', msg: `💥 SPACEMAN HANCUR!` });
         }
     });
 
-    // Dummy rute game lain (akan dibahas di Part 2)
+    // Rute game lain
     socket.on('play_roulette', (d) => {});
     socket.on('play_coinflip', (d) => {});
     socket.on('play_spinwheel', (d) => {});
