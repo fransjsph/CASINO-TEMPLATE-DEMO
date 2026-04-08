@@ -10,8 +10,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// RTP DEFAULT TAMBAH ASTRONAUT
 let rtpBandar = { roulette: 40, coinflip: 40, spinwheel: 30, astronaut: 30 };
+let forceAstroMulti = null; // VARIABLE BUAT SIMPAN SETTINGAN 1X PAKAI
 
 const dbPath = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, 'lgolux.db') : './lgolux.db';
 const db = new sqlite3.Database(dbPath);
@@ -77,7 +77,6 @@ app.get('/api/history', (req, res) => {
 
 app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ success: true }); });
 
-// ADMIN API
 app.get('/api/admin/users', (req, res) => {
     if (req.session.role !== 'admin') return res.status(403).send();
     db.all(`SELECT id, username, coin, status FROM users WHERE role = 'member' ORDER BY id DESC`, (err, rows) => res.json(rows));
@@ -114,7 +113,22 @@ io.on('connection', (socket) => {
     if (session.role === 'admin') socket.join('admins');
 
     socket.on('get_rtp', () => { if (session.role === 'admin') socket.emit('rtp_data', rtpBandar); });
-    socket.on('update_rtp', (newRtp) => { if (session.role === 'admin') { rtpBandar = newRtp; io.to('admins').emit('rtp_data', rtpBandar); } });
+    
+    socket.on('update_rtp', (newRtp) => { 
+        if (session.role === 'admin') { 
+            rtpBandar = newRtp; 
+            io.to('admins').emit('rtp_data', rtpBandar); 
+            socket.emit('notif_msg', '😈 Win Rate Normal Diperbarui!'); 
+        } 
+    });
+
+    // EVENT BARU: TEMBAK FORCE MULTIPLIER 1X PAKAI
+    socket.on('force_astro', (val) => {
+        if (session.role === 'admin') {
+            forceAstroMulti = parseFloat(val);
+            socket.emit('notif_msg', `🚀 SUPER JP AKTIF: Ronde Astronaut berikutnya pasti tembus x${forceAstroMulti}!`);
+        }
+    });
 
     socket.on('req_deposit', (amount) => {
         db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'DEPOSIT', ?, 'PENDING')`, [session.userId, session.username, amount], function() {
@@ -169,12 +183,12 @@ io.on('connection', (socket) => {
         db.all(`SELECT * FROM transactions WHERE status = 'PENDING' ORDER BY date DESC`, (err, rows) => socket.emit('admin_deposit_list', rows));
     });
 
-    // --- GAMES LOGIC ---
+    // --- GAMES (ROULETTE, COINFLIP, SPINWHEEL) ---
     socket.on('play_roulette', (data) => {
         const { betAmount, color } = data;
-        if (betAmount > 100000) return socket.emit('game_result', { game: 'roulette', status: 'error', msg: '❌ Maksimal bet 100.000!' });
+        if (betAmount > 100000) return;
         db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'roulette', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return;
             const newCoin = user.coin - betAmount;
             db.run(`UPDATE users SET coin = ? WHERE id = ?`, [newCoin, session.userId], () => {
                 socket.emit('update_coin', newCoin);
@@ -196,9 +210,9 @@ io.on('connection', (socket) => {
 
     socket.on('play_coinflip', (data) => {
         const { betAmount, guess } = data;
-        if (betAmount > 100000) return socket.emit('game_result', { game: 'coinflip', status: 'error', msg: '❌ Maksimal bet 100.000!' });
+        if (betAmount > 100000) return;
         db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'coinflip', status: 'error', msg: '❌ Saldo tidak cukup!' });
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return;
             const newCoin = user.coin - betAmount;
             db.run(`UPDATE users SET coin = ? WHERE id = ?`, [newCoin, session.userId], () => {
                 socket.emit('update_coin', newCoin);
@@ -220,9 +234,9 @@ io.on('connection', (socket) => {
 
     socket.on('play_spinwheel', (data) => {
         const betAmount = data.betAmount;
-        if (betAmount > 100000) return socket.emit('game_result', { game: 'spinwheel', status: 'error', msg: '❌ Maksimal bet 100.000!' });
+        if (betAmount > 100000) return;
         db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'spinwheel', status: 'error', msg: '❌ Saldo tidak cukup!' });
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return;
             db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [betAmount, session.userId], () => {
                 socket.emit('update_coin', user.coin - betAmount);
                 setTimeout(() => {
@@ -242,32 +256,37 @@ io.on('connection', (socket) => {
         });
     });
 
-    // --- GAME BARU: ASTRONAUT (CRASH) ---
+    // --- GAME ASTRONAUT DENGAN FORCE MULTIPLIER ---
     socket.on('play_astronaut', (data) => {
         const { betAmount } = data;
-        if (betAmount > 100000) return socket.emit('game_result', { game: 'astronaut', status: 'error', msg: '❌ Maksimal bet 100.000!' });
+        if (betAmount > 100000) return;
         db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'astronaut', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return;
             
             db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [betAmount, session.userId], () => {
                 socket.emit('update_coin', user.coin - betAmount);
                 
-                // Algoritma Generasi Crash Point RTP Bandar
-                let crashPoint = 1.00; // Mulai dari 1.00x
-                const isWin = Math.random() < (rtpBandar.astronaut / 100);
-                
-                if (isWin) {
-                    crashPoint = 1.00 + (Math.random() * 5); // Terbang sampai x6
-                    if(Math.random() < 0.2) crashPoint += Math.random() * 10; // 20% Peluang ke x16
-                    if(Math.random() < 0.05) crashPoint += Math.random() * 50; // 5% Peluang JP ke x66
-                    if(Math.random() < 0.01) crashPoint += Math.random() * 500; // 1% Peluang SUPER JP x566
+                let crashPoint = 1.00; 
+
+                // CEK APAKAH ADA SETTINGAN FORCE DARI ADMIN (1X PAKAI)
+                if (forceAstroMulti !== null) {
+                    crashPoint = forceAstroMulti;
+                    forceAstroMulti = null; // LANGSUNG DIRESET SETELAH DIPAKAI
                 } else {
-                    crashPoint = 1.00 + (Math.random() * 0.4); // Terbang pendek, meledak di x1.00 - x1.40
+                    // KALAU GAK ADA FORCE, PAKAI RTP BIASA
+                    const isWin = Math.random() < (rtpBandar.astronaut / 100);
+                    if (isWin) {
+                        crashPoint = 1.00 + (Math.random() * 5); 
+                        if(Math.random() < 0.2) crashPoint += Math.random() * 10; 
+                        if(Math.random() < 0.05) crashPoint += Math.random() * 50; 
+                        if(Math.random() < 0.01) crashPoint += Math.random() * 500; 
+                    } else {
+                        crashPoint = 1.00 + (Math.random() * 0.4); 
+                    }
                 }
                 
                 crashPoint = parseFloat(crashPoint.toFixed(2));
                 
-                // Simpan di server buat verifikasi pas player narik dana
                 socket.astroActive = true;
                 socket.astroCrash = crashPoint;
                 socket.astroBet = betAmount;
@@ -277,12 +296,10 @@ io.on('connection', (socket) => {
         });
     });
 
-    // Tarik Dana Manual / Auto
     socket.on('cashout_astronaut', (data) => {
-        if(!socket.astroActive) return; // Udah meledak atau udah ditarik
+        if(!socket.astroActive) return; 
         const { stoppedAt } = data;
         
-        // Verifikasi Anti-Cheat: Pastikan narik sebelum roket meledak betulan
         if (stoppedAt <= socket.astroCrash) {
             socket.astroActive = false;
             const winAmount = Math.floor(socket.astroBet * stoppedAt);
