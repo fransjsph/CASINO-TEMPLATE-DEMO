@@ -10,7 +10,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-let rtpBandar = { roulette: 40, coinflip: 40, spinwheel: 30 };
+// RTP DEFAULT TAMBAH ASTRONAUT
+let rtpBandar = { roulette: 40, coinflip: 40, spinwheel: 30, astronaut: 30 };
 
 const dbPath = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, 'lgolux.db') : './lgolux.db';
 const db = new sqlite3.Database(dbPath);
@@ -141,9 +142,7 @@ io.on('connection', (socket) => {
             db.run(`UPDATE transactions SET status = 'SUCCESS' WHERE id = ?`, [id]);
             if (tx.type === 'DEPOSIT') {
                 db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [tx.amount, tx.user_id], () => {
-                    db.get(`SELECT coin FROM users WHERE id = ?`, [tx.user_id], (err, u) => {
-                        io.to(`user_${tx.user_id}`).emit('update_coin', u.coin);
-                    });
+                    db.get(`SELECT coin FROM users WHERE id = ?`, [tx.user_id], (err, u) => io.to(`user_${tx.user_id}`).emit('update_coin', u.coin));
                 });
             }
             socket.emit('deposit_approved_success');
@@ -175,8 +174,7 @@ io.on('connection', (socket) => {
         const { betAmount, color } = data;
         if (betAmount > 100000) return socket.emit('game_result', { game: 'roulette', status: 'error', msg: '❌ Maksimal bet 100.000!' });
         db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (user.status === 'BLOKIR') return;
-            if (user.coin < betAmount) return socket.emit('game_result', { game: 'roulette', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'roulette', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
             const newCoin = user.coin - betAmount;
             db.run(`UPDATE users SET coin = ? WHERE id = ?`, [newCoin, session.userId], () => {
                 socket.emit('update_coin', newCoin);
@@ -200,8 +198,7 @@ io.on('connection', (socket) => {
         const { betAmount, guess } = data;
         if (betAmount > 100000) return socket.emit('game_result', { game: 'coinflip', status: 'error', msg: '❌ Maksimal bet 100.000!' });
         db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (user.status === 'BLOKIR') return;
-            if (user.coin < betAmount) return socket.emit('game_result', { game: 'coinflip', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'coinflip', status: 'error', msg: '❌ Saldo tidak cukup!' });
             const newCoin = user.coin - betAmount;
             db.run(`UPDATE users SET coin = ? WHERE id = ?`, [newCoin, session.userId], () => {
                 socket.emit('update_coin', newCoin);
@@ -221,15 +218,11 @@ io.on('connection', (socket) => {
         });
     });
 
-    // BUG FIX UTAMA SPIN WHEEL (NANGKEP DATA PAKET / OBJECT)
     socket.on('play_spinwheel', (data) => {
-        const betAmount = data.betAmount; // Buka paketnya dulu biar jadi Angka
+        const betAmount = data.betAmount;
         if (betAmount > 100000) return socket.emit('game_result', { game: 'spinwheel', status: 'error', msg: '❌ Maksimal bet 100.000!' });
-        
         db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
-            if (user.status === 'BLOKIR') return;
-            if (user.coin < betAmount) return socket.emit('game_result', { game: 'spinwheel', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
-            
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'spinwheel', status: 'error', msg: '❌ Saldo tidak cukup!' });
             db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [betAmount, session.userId], () => {
                 socket.emit('update_coin', user.coin - betAmount);
                 setTimeout(() => {
@@ -247,6 +240,64 @@ io.on('connection', (socket) => {
                 }, 2000);
             });
         });
+    });
+
+    // --- GAME BARU: ASTRONAUT (CRASH) ---
+    socket.on('play_astronaut', (data) => {
+        const { betAmount } = data;
+        if (betAmount > 100000) return socket.emit('game_result', { game: 'astronaut', status: 'error', msg: '❌ Maksimal bet 100.000!' });
+        db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'astronaut', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
+            
+            db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [betAmount, session.userId], () => {
+                socket.emit('update_coin', user.coin - betAmount);
+                
+                // Algoritma Generasi Crash Point RTP Bandar
+                let crashPoint = 1.00; // Mulai dari 1.00x
+                const isWin = Math.random() < (rtpBandar.astronaut / 100);
+                
+                if (isWin) {
+                    crashPoint = 1.00 + (Math.random() * 5); // Terbang sampai x6
+                    if(Math.random() < 0.2) crashPoint += Math.random() * 10; // 20% Peluang ke x16
+                    if(Math.random() < 0.05) crashPoint += Math.random() * 50; // 5% Peluang JP ke x66
+                    if(Math.random() < 0.01) crashPoint += Math.random() * 500; // 1% Peluang SUPER JP x566
+                } else {
+                    crashPoint = 1.00 + (Math.random() * 0.4); // Terbang pendek, meledak di x1.00 - x1.40
+                }
+                
+                crashPoint = parseFloat(crashPoint.toFixed(2));
+                
+                // Simpan di server buat verifikasi pas player narik dana
+                socket.astroActive = true;
+                socket.astroCrash = crashPoint;
+                socket.astroBet = betAmount;
+
+                socket.emit('start_astronaut', { crashPoint: crashPoint });
+            });
+        });
+    });
+
+    // Tarik Dana Manual / Auto
+    socket.on('cashout_astronaut', (data) => {
+        if(!socket.astroActive) return; // Udah meledak atau udah ditarik
+        const { stoppedAt } = data;
+        
+        // Verifikasi Anti-Cheat: Pastikan narik sebelum roket meledak betulan
+        if (stoppedAt <= socket.astroCrash) {
+            socket.astroActive = false;
+            const winAmount = Math.floor(socket.astroBet * stoppedAt);
+            db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [winAmount, session.userId], () => {
+                db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
+                    io.to(`user_${session.userId}`).emit('update_coin', u.coin);
+                    socket.emit('game_result', { game: 'astronaut', status: 'win', msg: `🎉 CAIR! Dapat 🪙 ${winAmount.toLocaleString('id-ID')}` });
+                });
+            });
+        }
+    });
+
+    socket.on('crash_astronaut', () => {
+        socket.astroActive = false;
+        socket.emit('game_result', { game: 'astronaut', status: 'lose', msg: `💥 ROKET MELEDAK!` });
     });
 });
 
