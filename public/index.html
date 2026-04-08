@@ -31,14 +31,12 @@
     .modal-box { width: 100%; background: var(--surface); padding: 30px; border-radius: 25px 25px 0 0; border-top: 2px solid var(--gold); animation: up 0.3s; box-sizing: border-box; }
     @keyframes up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-    /* CHIPS BET (TOMBOL QUICK BET) */
     .bet-chips { display:flex; gap:8px; overflow-x:auto; margin-bottom:15px; padding-bottom:5px; }
     .bet-chips::-webkit-scrollbar { height:4px; }
     .bet-chips::-webkit-scrollbar-thumb { background:var(--gold); border-radius:4px; }
     .bet-chips button { flex: 0 0 auto; background:#111; color:var(--gold); border:1px solid var(--gold); padding:8px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:12px; }
     .bet-chips button:active { background:var(--gold); color:#000; }
 
-    /* ANIMASI GAMES */
     .v-box { height: 60px; border: 2px solid var(--gold); border-radius: 10px; margin-bottom: 15px; position: relative; overflow: hidden; display: none; }
     .v-strip { width: 1000px; height: 100%; background: repeating-linear-gradient(90deg, #ef4444 0 50px, #111 50px 100px); }
     .v-strip.run { animation: move 0.1s infinite linear; }
@@ -46,11 +44,10 @@
     
     .v-coin-box { width: 80px; height: 80px; margin: 0 auto 15px; perspective: 1000px; display: none; }
     .v-coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: 2s; }
-    .v-coin.run { animation: flip 0.15s infinite linear; }
+    .v-coin.run { animation: flip 0.1s infinite linear; }
     @keyframes flip { from { transform: rotateY(0); } to { transform: rotateY(360deg); } }
     .v-face { position: absolute; width: 100%; height: 100%; border-radius: 50%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; font-size: 40px; background: #222; border: 3px solid var(--gold); }
 
-    /* SPIN WHEEL CSS YANG SEMPAT HILANG WKWK */
     .v-spin-box { width:100px; height:100px; margin: 0 auto 15px; position:relative; display:none; }
     .v-spin-box::after { content:'▼'; position:absolute; top:-15px; left:50%; transform:translateX(-50%); color:var(--gold); z-index:2; font-size:20px; }
     .v-spin { width:100%; height:100%; border-radius:50%; border:3px solid var(--gold); background: conic-gradient(#ef4444 0 60deg, #111 60deg 120deg, #ef4444 120deg 180deg, #111 180deg 240deg, #ef4444 240deg 300deg, #111 300deg 360deg); transition: transform 2s cubic-bezier(0.25, 0.1, 0.25, 1); }
@@ -196,13 +193,11 @@
     let socket;
     fetch('/api/me').then(r => r.json()).then(d => { if(d.loggedIn) masuk(d); });
 
-    // FUNGSI BUAT FORMAT TITIK (1.000.000)
     function formatRupiah(obj) {
       let val = obj.value.replace(/[^0-9]/g, '');
       obj.value = val ? parseInt(val).toLocaleString('id-ID') : '';
     }
     
-    // FUNGSI BUAT TOMBOL QUICK BET CHIPS
     function setBet(gameChar, amount) {
       document.getElementById('b-'+gameChar).value = amount.toLocaleString('id-ID');
     }
@@ -213,16 +208,37 @@
     function closeAllM() { document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden')); }
     function openG(g) { openM('m-'+g); document.getElementById('s-'+g.charAt(0)).innerText = ''; }
 
+    // FUNGSI LOGIN & REGISTER ANTI-CRASH
     async function login() {
-      const u = document.getElementById('l-u').value, p = document.getElementById('l-p').value;
-      const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) });
-      const d = await res.json(); if(d.success) location.reload(); else alert(d.msg);
+      const u = document.getElementById('l-u').value.trim();
+      const p = document.getElementById('l-p').value.trim();
+      if(!u || !p) return alert("⚠️ Username dan Password wajib diisi bosku!");
+      
+      try {
+          const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) });
+          const d = await res.json(); 
+          if(d.success) location.reload(); 
+          else alert(d.msg);
+      } catch (err) {
+          alert("⚠️ Server sedang sibuk / restart, coba beberapa detik lagi!");
+      }
     }
+    
     async function reg() {
-      const u = document.getElementById('r-u').value, p = document.getElementById('r-p').value;
-      const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) });
-      const d = await res.json(); alert(d.msg); if(d.success) toggleA();
+      const u = document.getElementById('r-u').value.trim();
+      const p = document.getElementById('r-p').value.trim();
+      if(!u || !p) return alert("⚠️ Username dan Password wajib diisi bosku!");
+      
+      try {
+          const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) });
+          const d = await res.json(); 
+          alert(d.msg); 
+          if(d.success) toggleA();
+      } catch (err) {
+          alert("⚠️ Server sedang sibuk / restart, coba beberapa detik lagi!");
+      }
     }
+    
     async function logout() { await fetch('/api/logout',{method:'POST'}); location.reload(); }
 
     function masuk(d) {
@@ -230,6 +246,7 @@
       document.getElementById('main-v').classList.remove('hidden');
       document.getElementById('n-u').innerText = d.username.toUpperCase();
       document.getElementById('n-c').innerText = d.coin.toLocaleString('id-ID');
+      
       socket = io();
       socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID'));
       socket.on('notif_msg', m => alert(m));
@@ -238,9 +255,8 @@
         const s = document.getElementById('s-'+r.game.charAt(0));
         const v = document.getElementById('v-'+r.game.charAt(0)+'-'+(r.game=='roulette'?'strip':(r.game=='coinflip'?'coin':'spin')));
         
-        v.classList.remove('run'); // STOP ANIMASI
+        v.classList.remove('run');
         
-        // BUG FIX: Kalau error (saldo kurang / bet over 100k)
         if(r.status === 'error') {
             s.innerText = r.msg; 
             s.style.color = '#ef4444';
@@ -248,7 +264,6 @@
             return;
         }
 
-        // TAMPILAN MENANG / KALAH NORMAL
         if(r.game=='coinflip') v.style.transform = r.msg.includes('ANGKA') ? 'rotateY(0)' : 'rotateY(180deg)';
         if(r.game=='spinwheel') {
             const angle = r.status == 'win' ? (Math.floor(Math.random()*360)+720) : (Math.floor(Math.random()*90)+720);
@@ -263,8 +278,51 @@
     function doD() { 
         let val = document.getElementById('d-a').value.replace(/\./g, '');
         const a = parseInt(val); 
-        if(!a || a<=0) return alert("Nominal tidak valid bosku!");
+        if(!a || a<=0) return alert("⚠️ Nominal tidak valid bosku!");
         socket.emit('req_deposit', a); closeM('m-depo'); document.getElementById('d-a').value='';
     }
     
-    function doW() {
+    function doW() { 
+        let val = document.getElementById('w-a').value.replace(/\./g, '');
+        const a = parseInt(val); 
+        if(!a || a<=0) return alert("⚠️ Nominal tidak valid bosku!");
+        socket.emit('req_wd', a); closeM('m-wd'); document.getElementById('w-a').value='';
+    }
+    
+    async function showH() {
+      const r = await fetch('/api/history'); const d = await r.json();
+      let h = ''; 
+      d.forEach(x => { 
+        let color = x.status == 'SUCCESS' ? '#10b981' : (x.status == 'REJECTED' ? '#ef4444' : '#f59e0b');
+        let noteHTML = x.note ? `<br><small style="color:#aaa;">📝 Ket: ${x.note}</small>` : '';
+        h += `<div style="border-bottom:1px solid #333; padding:10px 0;">
+                <b style="color:var(--gold)">${x.type}</b> | 🪙 ${x.amount.toLocaleString('id-ID')} | <span style="color:${color}; font-weight:bold;">${x.status}</span>
+                <br><small>${x.date}</small>
+                ${noteHTML}
+              </div>`; 
+      });
+      document.getElementById('h-list').innerHTML = h || 'Belum ada transaksi'; 
+      openM('m-hist');
+    }
+
+    function playG(g, c) {
+      let rawVal = document.getElementById('b-'+g.charAt(0)).value.replace(/\./g, '');
+      const b = parseInt(rawVal);
+      
+      if(!b || b<=0) return alert('⚠️ Pilih atau isi bet dulu bosku!');
+      if(b > 100000) return alert('❌ Maksimal Bet 100.000 bosku!');
+      
+      document.getElementById('s-'+g.charAt(0)).innerText = '🎲 Memutar mesin...';
+      document.getElementById('s-'+g.charAt(0)).style.color = '#fff';
+      
+      const box = document.getElementById('v-'+g.charAt(0)+'-box'); box.style.display = 'flex';
+      const v = document.getElementById('v-'+g.charAt(0)+'-'+(g=='roulette'?'strip':(g=='coinflip'?'coin':'spin')));
+      
+      v.style.transform = 'none'; 
+      setTimeout(() => v.classList.add('run'), 10);
+      
+      socket.emit('play_'+g, { betAmount:b, color:c, guess:c });
+    }
+  </script>
+</body>
+</html>
