@@ -264,11 +264,118 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Rute game lain
-    socket.on('play_roulette', (d) => {});
-    socket.on('play_coinflip', (d) => {});
-    socket.on('play_spinwheel', (d) => {});
-    socket.on('play_baccarat', (d) => {});
+    // --- GAME ROULETTE ---
+    socket.on('play_roulette', (data) => {
+        const { betAmount, color } = data;
+        if (betAmount > 1000000) return;
+        db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'roulette', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
+            db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [betAmount, session.userId], () => {
+                socket.emit('update_coin', user.coin - betAmount);
+                setTimeout(() => {
+                    const isWin = Math.random() < (rtpBandar.roulette / 100);
+                    const resColor = isWin ? color : (color === 'merah' ? 'hitam' : 'merah');
+                    if (isWin) {
+                        db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [betAmount * 2, session.userId], () => {
+                            db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
+                                io.to(`user_${session.userId}`).emit('update_coin', u.coin);
+                                socket.emit('game_result', { game: 'roulette', status: 'win', msg: `🎉 WIN! Keluar ${resColor.toUpperCase()}` });
+                            });
+                        });
+                    } else socket.emit('game_result', { game: 'roulette', status: 'lose', msg: `💀 ZONK! Keluar ${resColor.toUpperCase()}` });
+                }, 1500);
+            });
+        });
+    });
+
+    // --- GAME BACCARAT VIP ---
+    socket.on('play_baccarat', (data) => {
+        const { betAmount, choice } = data; // choice: player, banker, tie
+        if (betAmount > 1000000) return;
+        db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'baccarat', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
+            db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [betAmount, session.userId], () => {
+                socket.emit('update_coin', user.coin - betAmount);
+                setTimeout(() => {
+                    const isWin = Math.random() < (rtpBandar.baccarat / 100);
+                    let winner = choice;
+                    
+                    if (!isWin) {
+                        const options = ['player', 'banker', 'tie'].filter(o => o !== choice);
+                        winner = options[Math.floor(Math.random() * options.length)];
+                    }
+                    
+                    // Generate skor kartu palsu buat visual (P vs B)
+                    let pScore = winner === 'player' ? Math.floor(Math.random()*4)+6 : Math.floor(Math.random()*6);
+                    let bScore = winner === 'banker' ? Math.floor(Math.random()*4)+6 : Math.floor(Math.random()*6);
+                    if (winner === 'tie') { pScore = 8; bScore = 8; } // Tie pasti nilainya sama
+
+                    if (isWin) {
+                        let multi = choice === 'tie' ? 8 : (choice === 'banker' ? 1.95 : 2);
+                        let winAmount = Math.floor(betAmount * multi);
+                        db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [winAmount, session.userId], () => {
+                            db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
+                                io.to(`user_${session.userId}`).emit('update_coin', u.coin);
+                                socket.emit('game_result', { game: 'baccarat', status: 'win', msg: `🎉 WIN! ${winner.toUpperCase()}`, winner, pScore, bScore });
+                            });
+                        });
+                    } else {
+                        socket.emit('game_result', { game: 'baccarat', status: 'lose', msg: `💀 ZONK! ${winner.toUpperCase()}`, winner, pScore, bScore });
+                    }
+                }, 2000);
+            });
+        });
+    });
+
+    // --- GAME COINFLIP ---
+    socket.on('play_coinflip', (data) => {
+        const { betAmount, guess } = data;
+        if (betAmount > 1000000) return;
+        db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'coinflip', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
+            const newCoin = user.coin - betAmount;
+            db.run(`UPDATE users SET coin = ? WHERE id = ?`, [newCoin, session.userId], () => {
+                socket.emit('update_coin', newCoin);
+                setTimeout(() => {
+                    const isWin = Math.random() < (rtpBandar.coinflip / 100);
+                    const res = isWin ? guess : (guess === 'angka' ? 'gambar' : 'angka');
+                    if (isWin) {
+                        db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [Math.floor(betAmount * 1.9), session.userId], () => {
+                            db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
+                                io.to(`user_${session.userId}`).emit('update_coin', u.coin);
+                                socket.emit('game_result', { game: 'coinflip', status: 'win', msg: `🎉 JP! Mendarat di ${res.toUpperCase()}` });
+                            });
+                        });
+                    } else socket.emit('game_result', { game: 'coinflip', status: 'lose', msg: `💀 ZONK! Mendarat di ${res.toUpperCase()}` });
+                }, 1500);
+            });
+        });
+    });
+
+    // --- GAME SPIN WHEEL ---
+    socket.on('play_spinwheel', (data) => {
+        const betAmount = data.betAmount;
+        if (betAmount > 1000000) return;
+        db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
+            if (user.status === 'BLOKIR' || user.coin < betAmount) return socket.emit('game_result', { game: 'spinwheel', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
+            db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [betAmount, session.userId], () => {
+                socket.emit('update_coin', user.coin - betAmount);
+                setTimeout(() => {
+                    const isWin = Math.random() < (rtpBandar.spinwheel / 100);
+                    let multi = isWin ? [1.5, 2, 5][Math.floor(Math.random()*3)] : [0, 0, 0.5, 1][Math.floor(Math.random()*4)];
+                    const win = Math.floor(betAmount * multi);
+                    if (win > 0) {
+                        db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [win, session.userId], () => {
+                            db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
+                                io.to(`user_${session.userId}`).emit('update_coin', u.coin);
+                                socket.emit('game_result', { game: 'spinwheel', status: multi >= 2 ? 'win' : 'lose', msg: `🎡 x${multi}! Dapat ${win.toLocaleString('id-ID')}` });
+                            });
+                        });
+                    } else socket.emit('game_result', { game: 'spinwheel', status: 'lose', msg: `🎡 ZONK! Keluar x0` });
+                }, 2000);
+            });
+        });
+    });
 });
 
 server.listen(process.env.PORT || 3000, '0.0.0.0', () => console.log(`🚀 LGOLUX LIVE!`));
