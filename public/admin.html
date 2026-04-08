@@ -1,187 +1,107 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LGOLUX - Executive Admin</title>
+  <meta charset="UTF-8"><title>LGOLUX - EXECUTIVE ADMIN</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
-    :root { --bg: #0f172a; --panel: #1e293b; --emerald: #10b981; --text: #f8fafc; }
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-    .container { max-width: 900px; margin: 0 auto; }
-    .header { background: var(--panel); padding: 20px 30px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(16, 185, 129, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 25px;}
-    .header h1 { margin: 0; color: var(--emerald); font-size: 24px; text-transform: uppercase; }
-    .btn-logout { background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .card { background: var(--panel); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
-    .card h3 { margin-top: 0; color: var(--emerald); font-size: 16px; margin-bottom: 20px;}
-    input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); color: white; box-sizing: border-box; outline: none;}
-    input:focus { border-color: var(--emerald); }
-    button.btn-green { width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s;}
-    button.btn-green:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.5); }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th { text-align: left; color: #94a3b8; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    td { padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    .auth-box { max-width: 400px; margin: 100px auto; }
-    .hidden { display: none !important; }
-    .rtp-label { font-size: 13px; color: #94a3b8; font-weight: bold; display: block; margin-bottom: 5px; }
-    .rtp-input { display: flex; align-items: center; gap: 10px; margin-bottom: 15px;}
-    .rtp-input input { margin-bottom: 0; text-align: center; font-size: 16px; font-weight: bold; color: var(--emerald);}
-    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    body { font-family:'Plus Jakarta Sans'; background:#0f172a; color:#f8fafc; padding:20px; }
+    .card { background:#1e293b; padding:20px; border-radius:15px; border:1px solid #334155; margin-bottom:20px; }
+    h3 { color:#10b981; margin-top:0; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    td, th { padding:10px; border-bottom:1px solid #334155; text-align:left; }
+    input, select { background:#0f172a; border:1px solid #334155; color:#fff; padding:10px; border-radius:5px; width:100%; box-sizing:border-box; margin-bottom: 10px; }
+    button { background:#10b981; color:#000; border:none; padding:10px; border-radius:5px; font-weight:800; cursor:pointer; }
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,0.8); display:flex; justify-content:center; align-items:center; }
+    .modal-box { background:#1e293b; padding:30px; border-radius:20px; width:350px; border:1px solid #10b981; }
+    .hidden { display:none; }
   </style>
 </head>
 <body>
-
-  <div id="admin-login-view" class="card auth-box hidden">
-    <h1 style="color:var(--emerald); text-align:center; margin-bottom:5px;">🛡️ ADMIN PORTAL</h1>
-    <p style="text-align:center; color:#94a3b8; font-size:13px; margin-bottom:25px;">Akses Terbatas Khusus Eksekutif</p>
-    <input type="text" id="log-user" placeholder="Admin Username">
-    <input type="password" id="log-pass" placeholder="Admin Password">
-    <button class="btn-green" onclick="loginAdmin()">OTORISASI MASUK</button>
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2>💼 LGOLUX EXECUTIVE ADMIN</h2>
+    <button onclick="fetch('/api/logout', {method:'POST'}).then(()=>location.href='/')" style="background: red; color: white;">LOGOUT</button>
   </div>
-
-  <div id="admin-dashboard-view" class="container hidden">
-    <div class="header">
-      <h1>💼 LGOLUX <span style="color:#94a3b8; font-weight:400;">| Executive</span></h1>
-      <button class="btn-logout" onclick="logout()">TUTUP AKSES</button>
+  
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
+    <div class="card">
+      <h3>🔔 Antrean Transaksi (Depo/WD)</h3>
+      <table>
+        <thead><tr><th>User</th><th>Tipe</th><th>Nominal</th><th>Aksi</th></tr></thead>
+        <tbody id="tx-list"></tbody>
+      </table>
     </div>
 
-    <div class="grid">
-      
-      <div style="display: flex; flex-direction: column; gap: 20px;">
-        
-        <div class="card">
-          <h3>🔔 ANTRIAN DEPOSIT MEMBER</h3>
-          <div style="overflow-x:auto;">
-            <table>
-              <thead><tr><th>Username</th><th>Nominal Transfer</th><th>Aksi</th></tr></thead>
-              <tbody id="admin-depo-list">
-                <tr><td colspan="3" style="text-align:center; color:#94a3b8;">Mencari data transaksi...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+    <div class="card">
+      <h3 style="color:#ef4444">🎛️ RTP Control Bandar</h3>
+      <label style="font-size: 12px; color: #888;">Roulette Win Rate (%)</label>
+      <input type="number" id="r-r">
+      <label style="font-size: 12px; color: #888;">Coinflip Win Rate (%)</label>
+      <input type="number" id="r-c">
+      <label style="font-size: 12px; color: #888;">SpinWheel Multiplier Rate (%)</label>
+      <input type="number" id="r-s">
+      <button style="background:red; width: 100%; margin-top: 10px; color: white;" onclick="saveRTP()">UPDATE WIN RATE</button>
+    </div>
 
-        <div class="card">
-          <h3>➕ BUAT AKUN MEMBER MANUAL</h3>
-          <input type="text" id="new-mem-user" placeholder="Username Baru">
-          <input type="text" id="new-mem-pass" placeholder="Password (Cth: lgolux123)">
-          <button class="btn-green" onclick="createMember()">DAFTARKAN MEMBER</button>
-        </div>
+    <div class="card" style="grid-column: 1/-1">
+      <h3>👥 Manajemen Member</h3>
+      <table id="user-table">
+        <thead><tr><th>ID Member</th><th>Saldo Koin</th><th>Status Akun</th><th>Aksi Admin</th></tr></thead>
+        <tbody id="u-list"></tbody>
+      </table>
+    </div>
+  </div>
 
-      </div>
-
-      <div class="card" style="border-color: rgba(239, 68, 68, 0.4);">
-        <h3 style="color: #ef4444;">🎛️ KONTROL BANDAR (RTP)</h3>
-        <p style="font-size:12px; color:#94a3b8; margin-top:-10px; margin-bottom:20px;">
-          Atur peluang menang player. <b>0%</b> = Player Pasti Kalah. <b>100%</b> = Player Pasti Menang/JP.
-        </p>
-
-        <label class="rtp-label">🎰 Roulette Mini (Peluang Menang %)</label>
-        <div class="rtp-input">
-          <input type="number" id="rtp-roulette" min="0" max="100">
-          <span>%</span>
-        </div>
-
-        <label class="rtp-label">🪙 Coin Flip (Peluang Menang %)</label>
-        <div class="rtp-input">
-          <input type="number" id="rtp-coinflip" min="0" max="100">
-          <span>%</span>
-        </div>
-
-        <label class="rtp-label">🎡 Spin Wheel (Peluang x2 / x5 %)</label>
-        <div class="rtp-input">
-          <input type="number" id="rtp-spinwheel" min="0" max="100">
-          <span>%</span>
-        </div>
-
-        <button class="btn-green" style="background: linear-gradient(135deg, #ef4444, #b91c1c); margin-top: 10px;" onclick="saveRTP()">
-          😈 SIMPAN SETTINGAN BANDAR
-        </button>
-      </div>
-
+  <div id="m-edit" class="modal hidden">
+    <div class="modal-box">
+      <h3>⚙️ Edit Member: <span id="e-n" style="color: var(--gold);"></span></h3>
+      <label style="font-size: 12px; color: #888;">Ubah Saldo Koin:</label>
+      <input type="number" id="e-c">
+      <label style="font-size: 12px; color: #888;">Ganti Password (Opsional):</label>
+      <input type="text" id="e-p" placeholder="Isi jika mau ganti, kosongkan jika tidak">
+      <label style="font-size: 12px; color: #888;">Status Akun:</label>
+      <select id="e-s">
+        <option value="AKTIF">AKTIF (Bisa Main)</option>
+        <option value="BLOKIR">BLOKIR (Banned)</option>
+      </select>
+      <button onclick="saveU()" style="width:100%; margin-top: 15px;">SIMPAN PERUBAHAN</button>
+      <button onclick="closeM()" style="width:100%; background:none; color:#ef4444; margin-top:10px">BATAL</button>
     </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    let socket;
+    let socket, selectedId;
+    fetch('/api/me').then(r => r.json()).then(d => { if(d.role=='admin') start(); else window.location.href='/'; });
 
-    fetch('/api/me').then(r => r.json()).then(data => {
-      if(data.loggedIn && data.role === 'admin') masukAdmin();
-      else document.getElementById('admin-login-view').classList.remove('hidden');
-    });
-
-    async function loginAdmin() {
-      const u = document.getElementById('log-user').value; const p = document.getElementById('log-pass').value;
-      const res = await fetch('/api/login', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) });
-      const data = await res.json();
-      if(data.success && data.role === 'admin') location.reload();
-      else alert("Akses Ditolak! Anda bukan Admin.");
-    }
-
-    async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href = '/'; }
-
-    async function createMember() {
-      const u = document.getElementById('new-mem-user').value; const p = document.getElementById('new-mem-pass').value;
-      if(!u || !p) return alert("Isi data dengan lengkap!");
-      const res = await fetch('/api/register', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p, role:'member'}) });
-      const data = await res.json();
-      alert(data.msg);
-      if(data.success) { document.getElementById('new-mem-user').value=''; document.getElementById('new-mem-pass').value=''; }
-    }
-
-    function masukAdmin() {
-      document.getElementById('admin-login-view').classList.add('hidden');
-      document.getElementById('admin-dashboard-view').classList.remove('hidden');
-      
-      socket = io();
-      
-      // SISTEM DEPOSIT
-      socket.emit('get_pending_deposits');
-      socket.on('admin_deposit_list', (list) => {
-        const tb = document.getElementById('admin-depo-list'); tb.innerHTML = '';
-        if(list.length === 0) return tb.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#94a3b8; padding:20px;">Tidak ada antrian deposit.</td></tr>';
-        list.forEach(d => {
-          tb.innerHTML += `<tr>
-            <td style="font-weight:bold;">${d.username.toUpperCase()}</td>
-            <td style="color:var(--emerald); font-weight:800;">🪙 ${d.amount.toLocaleString()}</td>
-            <td><button class="btn-green" style="padding:8px 15px; width:auto;" onclick="approveDepo(${d.id})">Approve</button></td>
-          </tr>`;
-        });
+    function start() {
+      socket = io(); loadU();
+      socket.emit('get_pending_deposits'); socket.emit('get_rtp');
+      socket.on('admin_deposit_list', d => {
+        let h = ''; d.forEach(x => { h += `<tr><td>${x.username}</td><td><b style="color:${x.type=='DEPOSIT'?'#10b981':'#ef4444'}">${x.type}</b></td><td>${x.amount.toLocaleString()}</td><td><button onclick="approve(${x.id})">Approve</button></td></tr>`; });
+        document.getElementById('tx-list').innerHTML = h || '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Tidak ada antrean</td></tr>';
       });
-
-      socket.on('admin_new_deposit', () => socket.emit('get_pending_deposits'));
+      socket.on('rtp_data', d => { document.getElementById('r-r').value=d.roulette; document.getElementById('r-c').value=d.coinflip; document.getElementById('r-s').value=d.spinwheel; });
       socket.on('deposit_approved_success', () => socket.emit('get_pending_deposits'));
-      
-      // SISTEM RTP / WIN RATE
-      socket.emit('get_rtp');
-      socket.on('rtp_data', (data) => {
-        document.getElementById('rtp-roulette').value = data.roulette;
-        document.getElementById('rtp-coinflip').value = data.coinflip;
-        document.getElementById('rtp-spinwheel').value = data.spinwheel;
-      });
-
-      socket.on('deposit_msg', (msg) => alert(msg)); // Buat nerima notif sukses ganti RTP
+      socket.on('admin_new_notif', () => socket.emit('get_pending_deposits'));
+      socket.on('notif_msg', m => alert(m));
     }
 
-    function approveDepo(id) { 
-      if(confirm('Setujui penambahan saldo koin ini?')) socket.emit('admin_approve_deposit', id); 
+    async function loadU() {
+      const r = await fetch('/api/admin/users'); const d = await r.json();
+      let h = ''; d.forEach(x => { h += `<tr><td><b>${x.username.toUpperCase()}</b></td><td style="color:#10b981; font-weight:bold;">🪙 ${x.coin.toLocaleString()}</td><td><span style="background:${x.status=='AKTIF'?'#065f46':'#7f1d1d'}; padding:5px 10px; border-radius:5px;">${x.status}</span></td><td><button onclick='openE(${JSON.stringify(x)})'>Manage</button></td></tr>`; });
+      document.getElementById('u-list').innerHTML = h;
     }
-
-    function saveRTP() {
-      const r = parseInt(document.getElementById('rtp-roulette').value);
-      const c = parseInt(document.getElementById('rtp-coinflip').value);
-      const s = parseInt(document.getElementById('rtp-spinwheel').value);
-
-      if(r >= 0 && c >= 0 && s >= 0 && r <= 100 && c <= 100 && s <= 100) {
-        if(confirm('😈 PERINGATAN: Yakin ingin mengubah Win Rate (RTP) mesin untuk semua member?')) {
-          socket.emit('update_rtp', { roulette: r, coinflip: c, spinwheel: s });
-        }
-      } else {
-        alert('Persentase error! Masukkan angka antara 0 sampai 100 bosku!');
-      }
+    function openE(u) { selectedId=u.id; document.getElementById('e-n').innerText=u.username.toUpperCase(); document.getElementById('e-c').value=u.coin; document.getElementById('e-s').value=u.status; document.getElementById('m-edit').classList.remove('hidden'); }
+    function closeM() { document.getElementById('m-edit').classList.add('hidden'); document.getElementById('e-p').value = ''; }
+    
+    async function saveU() {
+      const c = document.getElementById('e-c').value, s = document.getElementById('e-s').value, p = document.getElementById('e-p').value;
+      await fetch('/api/admin/update-user', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:selectedId, coin:c, status:s, password:p}) });
+      alert('Data Member Berhasil Diupdate!'); location.reload();
     }
+    
+    function approve(id) { if(confirm('Approve transaksi ini? Pastikan jika WD, Anda sudah transfer uangnya.')) socket.emit('admin_approve_deposit', id); }
+    function saveRTP() { socket.emit('update_rtp', { roulette:document.getElementById('r-r').value, coinflip:document.getElementById('r-c').value, spinwheel:document.getElementById('r-s').value }); }
   </script>
 </body>
 </html>
