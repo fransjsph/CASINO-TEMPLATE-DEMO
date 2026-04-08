@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LGOLUX - VIP Member</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root { 
+      --bg: #0a0a0a; --surface: #141414; --surface-2: #1f1f1f;
+      --gold: #d4af37; --gold-dark: #b5952f;
+      --text: #ffffff; --text-muted: #888888;
+      --border: rgba(255, 255, 255, 0.08);
+      --red: #ef4444; --green: #10b981;
+    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh;}
+    .app-container { width: 100%; max-width: 420px; background: var(--surface); position: relative; min-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(0,0,0,0.5);}
+    
+    /* AUTH VIEW */
+    .auth-view { padding: 40px 30px; text-align: center; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; box-sizing: border-box;}
+    .auth-view h1 { color: var(--gold); font-size: 32px; letter-spacing: 2px; margin-bottom: 5px;}
+    .auth-view input { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; outline: none; box-sizing: border-box; font-size: 14px;}
+    .auth-view input:focus { border-color: var(--gold); }
+    .btn-main { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; transition: 0.2s; font-size: 14px; text-transform: uppercase; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);}
+    .btn-main:active { transform: scale(0.98); }
+    .link-text { color: var(--gold); font-size: 12px; cursor: pointer; margin-top: 15px; display: inline-block; }
+    .hidden { display: none !important; }
+
+    /* MAIN APP VIEW */
+    .topbar { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 10;}
+    .user-info h4 { margin: 0; font-size: 16px; color: var(--gold); text-transform: uppercase;}
+    .user-info p { margin: 0; font-size: 12px; color: var(--text-muted); }
+    .logout-icon { color: var(--red); font-size: 20px; cursor: pointer; }
+
+    .content-area { padding: 20px; flex-grow: 1; padding-bottom: 80px; overflow-y: auto;}
+    
+    /* CARDS */
+    .wallet-card { background: linear-gradient(135deg, #1f1c14, #141414); border: 1px solid rgba(212, 175, 55, 0.2); padding: 25px; border-radius: 16px; text-align: center; margin-bottom: 25px; position: relative; overflow: hidden;}
+    .wallet-card::after { content:''; position:absolute; top:0; right:0; width:100px; height:100px; background:radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 70%);}
+    .wallet-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;}
+    .wallet-balance { font-size: 36px; font-weight: 800; color: var(--gold); margin: 10px 0;}
+
+    .grid-games { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .game-card { background: var(--surface-2); border: 1px solid var(--border); padding: 20px 15px; border-radius: 16px; text-align: center; cursor: pointer; transition: 0.2s;}
+    .game-card:active { transform: scale(0.95); border-color: var(--gold);}
+    .game-icon { font-size: 32px; margin-bottom: 10px; }
+    .game-title { font-size: 13px; font-weight: bold; color: var(--text); }
+
+    /* BOTTOM NAV */
+    .bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 420px; background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid var(--border); z-index: 10;}
+    .nav-item { color: var(--text-muted); font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; transition: 0.3s;}
+    .nav-item.active { color: var(--gold); }
+    .nav-icon { font-size: 20px; display: block; margin-bottom: 5px; }
+
+    /* MODALS (Popups) */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px;}
+    .modal-content { background: var(--surface); width: 90%; max-width: 380px; padding: 25px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.5); animation: slideUp 0.3s ease;}
+    @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;}
+    .modal-header h3 { margin: 0; font-size: 16px; color: var(--gold);}
+    .close-modal { color: var(--text-muted); font-size: 24px; cursor: pointer; line-height: 1;}
+    .modal-content input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; outline: none; margin-bottom: 15px; box-sizing: border-box;}
+    
+    .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
+    .btn-half { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white;}
+    
+    .status-msg { font-size: 13px; font-weight: bold; text-align: center; min-height: 20px; margin-top: 10px;}
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <div id="auth-view" class="auth-view">
+      <h1>👑 LGOLUX</h1>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom: 30px;">Premium Mobile Casino</p>
+      
+      <div id="form-login">
+        <input type="text" id="log-user" placeholder="Username" autocomplete="off">
+        <input type="password" id="log-pass" placeholder="Password">
+        <button class="btn-main" onclick="login()">Masuk Sistem</button>
+        <span class="link-text" onclick="toggleAuth('register')">Belum punya akun? Daftar Baru</span>
+      </div>
+      
+      <div id="form-register" class="hidden">
+        <input type="text" id="reg-user" placeholder="Username Baru" autocomplete="off">
+        <input type="password" id="reg-pass" placeholder="Password Baru">
+        <button class="btn-main" onclick="register()">Daftar Akun VIP</button>
+        <span class="link-text" onclick="toggleAuth('login')">Kembali ke Login</span>
+      </div>
+    </div>
+
+    <div id="app-view" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
+      
+      <div class="topbar">
+        <div class="user-info">
+          <h4 id="mem-name">USER</h4>
+          <p>VIP Member</p>
+        </div>
+        <div class="logout-icon" onclick="logout()">⏏️</div>
+      </div>
+
+      <div class="content-area">
+        
+        <div id="tab-home">
+          <div class="wallet-card">
+            <div class="wallet-title">Total Saldo Kredit</div>
+            <div class="wallet-balance"><span style="font-size:24px;">🪙</span> <span id="mem-coin">0</span></div>
+            <button class="btn-main" style="padding: 10px; font-size:12px; width: 60%; margin: 0 auto; display:block;" onclick="openModal('modal-deposit')">+ TOP UP SALDO</button>
+          </div>
+          
+          <h4 style="margin-bottom: 15px; font-size: 14px;">🔥 Hot Games</h4>
+          <div class="grid-games">
+            <div class="game-card" onclick="openGame('roulette')">
+              <div class="game-icon">🎰</div><div class="game-title">Roulette Mini</div>
+            </div>
+            <div class="game-card" onclick="openGame('coinflip')">
+              <div class="game-icon">🪙</div><div class="game-title">Coin Flip</div>
+            </div>
+            <div class="game-card" style="grid-column: 1 / -1;" onclick="openGame('spinwheel')">
+              <div class="game-icon">🎡</div><div class="game-title">Spin Wheel (Roda Gila)</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('home')">
+          <span class="nav-icon">🏠</span>Home
+        </div>
+        <div class="nav-item" onclick="openModal('modal-deposit')">
+          <span class="nav-icon">💳</span>Deposit
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="modal-deposit" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>💳 Form Deposit (Top-Up)</h3>
+        <span class="close-modal" onclick="closeModal('modal-deposit')">×</span>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); margin-top:0;">Masukkan nominal koin yang ingin dibeli. Admin akan menyetujui request Anda.</p>
+      <input type="number" id="depo-amount" placeholder="Nominal (Contoh: 10000)">
+      <button class="btn-main" onclick="requestDeposit()">Kirim Permintaan</button>
+    </div>
+  </div>
+
+  <div id="modal-roulette" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🎰 Roulette Mini (x2)</h3>
+        <span class="close-modal" onclick="closeModal('modal-roulette')">×</span>
+      </div>
+      <input type="number" id="bet-roulette" placeholder="Jumlah Taruhan (Koin)">
+      <div class="btn-group">
+        <button class="btn-half" style="background:#ef4444;" onclick="playGame('roulette', 'merah')">🔴 MERAH</button>
+        <button class="btn-half" style="background:#1f1f1f; border:1px solid #333;" onclick="playGame('roulette', 'hitam')">⚫ HITAM</button>
+      </div>
+      <div id="status-roulette" class="status-msg">Silakan pasang taruhan.</div>
+    </div>
+  </div>
+
+  <div id="modal-coinflip" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🪙 Coin Flip (x1.9)</h3>
+        <span class="close-modal" onclick="closeModal('modal-coinflip')">×</span>
+      </div>
+      <input type="number" id="bet-coinflip" placeholder="Jumlah Taruhan (Koin)">
+      <div class="btn-group">
+        <button class="btn-half" style="background:#3b82f6;" onclick="playGame('coinflip', 'angka')">🔢 ANGKA</button>
+        <button class="btn-half" style="background:#8b5cf6;" onclick="playGame('coinflip', 'gambar')">🖼️ GAMBAR</button>
+      </div>
+      <div id="status-coinflip" class="status-msg">Tebak koin mendarat di mana.</div>
+    </div>
+  </div>
+
+  <div id="modal-spinwheel" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🎡 Spin Wheel (Roda Gila)</h3>
+        <span class="close-modal" onclick="closeModal('modal-spinwheel')">×</span>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); text-align:center;">Perkalian Acak: x0, x0.5, x1, x1.5, x2, x5</p>
+      <input type="number" id="bet-spinwheel" placeholder="Jumlah Taruhan (Koin)">
+      <button class="btn-main" onclick="playGame('spinwheel', 'spin')">🌀 PUTAR RODA</button>
+      <div id="status-spinwheel" class="status-msg">Pasang taruhan dan putar!</div>
+    </div>
+  </div>
+
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket;
+    
+    // Inisialisasi
+    fetch('/api/me').then(r => r.json()).then(data => {
+      if(data.loggedIn) {
+        if(data.role === 'admin') window.location.href = '/admin'; 
+        else masukSistem(data);
+      }
+    });
+
+    // UI Logics
+    function toggleAuth(type) {
+      document.getElementById('form-login').classList.toggle('hidden', type !== 'login');
+      document.getElementById('form-register').classList.toggle('hidden', type !== 'register');
+    }
+
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function openGame(game) { openModal(`modal-${game}`); document.getElementById(`status-${game}`).innerText = "Silakan pasang taruhan."; document.getElementById(`status-${game}`).style.color = "var(--text-muted)";}
+
+    // Auth Actions
+    async function login() {
+      const u = document.getElementById('log-user').value; const p = document.getElementById('log-pass').value;
+      if(!u || !p) return alert("Isi data dengan lengkap!");
+      const res = await fetch('/api/login', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) });
+      const data = await res.json();
+      if(data.success) { if(data.role === 'admin') window.location.href = '/admin'; else location.reload(); } 
+      else alert(data.msg);
+    }
+
+    async function register() {
+      const u = document.getElementById('reg-user').value; const p = document.getElementById('reg-pass').value;
+      if(!u || !p) return alert("Isi data dengan lengkap!");
+      const res = await fetch('/api/register', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p, role:'member'}) });
+      const data = await res.json();
+      alert(data.msg); if(data.success) toggleAuth('login');
+    }
+
+    async function logout() { await fetch('/api/logout', {method:'POST'}); location.reload(); }
+
+    // Masuk Sistem Member
+    function masukSistem(data) {
+      document.getElementById('auth-view').classList.add('hidden');
+      document.getElementById('app-view').classList.remove('hidden');
+      document.getElementById('mem-name').innerText = data.username.toUpperCase();
+      document.getElementById('mem-coin').innerText = data.coin.toLocaleString();
+      
+      socket = io(); 
+      socket.on('update_coin', (coin) => document.getElementById('mem-coin').innerText = coin.toLocaleString());
+      socket.on('deposit_msg', (msg) => { alert(msg); closeModal('modal-deposit'); });
+      
+      // Menerima hasil semua game
+      socket.on('game_result', (res) => {
+        const st = document.getElementById(`status-${res.game}`);
+        if(st) {
+          st.innerText = res.msg;
+          st.style.color = res.status === 'win' ? 'var(--green)' : (res.status === 'lose' ? 'var(--red)' : 'var(--gold)');
+        }
+      });
+    }
+
+    // Aksi Deposit & Game
+    function requestDeposit() {
+      const amt = document.getElementById('depo-amount').value;
+      if(amt > 0) socket.emit('req_deposit', parseInt(amt)); else alert("Nominal tidak valid!");
+      document.getElementById('depo-amount').value = '';
+    }
+    
+    function playGame(gameType, choice) {
+      const bet = parseInt(document.getElementById(`bet-${gameType}`).value);
+      if(!bet || bet <= 0) return alert('Isi taruhan dulu bosku!');
+      
+      const st = document.getElementById(`status-${gameType}`);
+      st.innerText = '🎲 Memproses taruhan...';
+      st.style.color = 'var(--text)';
+
+      if(gameType === 'roulette') socket.emit('play_roulette', { betAmount: bet, color: choice });
+      else if(gameType === 'coinflip') socket.emit('play_coinflip', { betAmount: bet, guess: choice });
+      else if(gameType === 'spinwheel') socket.emit('play_spinwheel', bet);
+    }
+  </script>
+</body>
+</html>
