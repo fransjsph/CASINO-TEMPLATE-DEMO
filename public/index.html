@@ -208,7 +208,6 @@
     function closeAllM() { document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden')); }
     function openG(g) { openM('m-'+g); document.getElementById('s-'+g.charAt(0)).innerText = ''; }
 
-    // FUNGSI LOGIN & REGISTER ANTI-CRASH
     async function login() {
       const u = document.getElementById('l-u').value.trim();
       const p = document.getElementById('l-p').value.trim();
@@ -305,12 +304,15 @@
       openM('m-hist');
     }
 
+    // FUNGSI PLAY GAME (UDAH DITAMBAHIN CEK SALDO SEBELUM MUTER)
     function playG(g, c) {
       let rawVal = document.getElementById('b-'+g.charAt(0)).value.replace(/\./g, '');
       const b = parseInt(rawVal);
+      const currentCoin = parseInt(document.getElementById('n-c').innerText.replace(/\./g, '')) || 0;
       
       if(!b || b<=0) return alert('⚠️ Pilih atau isi bet dulu bosku!');
       if(b > 100000) return alert('❌ Maksimal Bet 100.000 bosku!');
+      if(b > currentCoin) return alert('❌ Saldo kredit tidak cukup bosku!');
       
       document.getElementById('s-'+g.charAt(0)).innerText = '🎲 Memutar mesin...';
       document.getElementById('s-'+g.charAt(0)).style.color = '#fff';
