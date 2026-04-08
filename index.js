@@ -10,30 +10,29 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// --- 🎛️ SETTINGAN RTP (WIN RATE) DEFAULT ---
 let rtpBandar = { roulette: 40, coinflip: 40, spinwheel: 30 };
 
-// 1. SETUP DATABASE RAILWAY READY
 const dbPath = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, 'lgolux.db') : './lgolux.db';
 const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT DEFAULT 'member', coin INTEGER DEFAULT 0, status TEXT DEFAULT 'AKTIF')`);
-    db.run(`CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, username TEXT, type TEXT, amount INTEGER, status TEXT DEFAULT 'PENDING', date DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+    db.run(`CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, username TEXT, type TEXT, amount INTEGER, status TEXT DEFAULT 'PENDING', note TEXT, date DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+    
+    // Trik aman biar kolom 'note' otomatis nambah kalau database versi lama udah terlanjur kebuat
+    db.run(`ALTER TABLE transactions ADD COLUMN note TEXT`, (err) => { /* Abaikan error kalau kolom udah ada */ });
     
     bcrypt.hash('admin123', 10, (err, hash) => {
         db.run(`INSERT OR IGNORE INTO users (username, password, role, coin) VALUES ('admin', ?, 'admin', 9999999)`, [hash]);
     });
 });
 
-// 2. MIDDLEWARE & SESSION
 const sessionMiddleware = session({ secret: 'lgolux-rahasia-jp', resave: false, saveUninitialized: true });
 app.use(express.json());
 app.use(sessionMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
 io.engine.use(sessionMiddleware);
 
-// 3. API ROUTES
 app.post('/api/register', (req, res) => {
     const { username, password, role } = req.body;
     const userRole = (role === 'admin' && req.session.role === 'admin') ? 'admin' : 'member'; 
@@ -85,15 +84,28 @@ app.get('/api/admin/users', (req, res) => {
 
 app.post('/api/admin/update-user', (req, res) => {
     if (req.session.role !== 'admin') return res.status(403).send();
-    const { id, coin, status, password } = req.body;
-    if (password && password.trim() !== "") {
-        bcrypt.hash(password, 10, (err, hash) => {
-            db.run(`UPDATE users SET password = ?, coin = ?, status = ? WHERE id = ?`, [hash, coin, status, id]);
-        });
-    } else {
-        db.run(`UPDATE users SET coin = ?, status = ? WHERE id = ?`, [coin, status, id]);
-    }
-    res.json({ success: true });
+    const { id, coin, status, password, note, username } = req.body;
+    
+    db.get(`SELECT coin FROM users WHERE id = ?`, [id], (err, user) => {
+        if(!user) return res.json({success: false});
+        
+        const diff = coin - user.coin;
+        // Kalau saldo berubah, catat ke history
+        if (diff !== 0) {
+            const adjType = diff > 0 ? 'BONUS ADMIN' : 'POTONGAN ADMIN';
+            db.run(`INSERT INTO transactions (user_id, username, type, amount, status, note) VALUES (?, ?, ?, ?, 'SUCCESS', ?)`, 
+                   [id, username, adjType, Math.abs(diff), note || 'Penyesuaian Saldo']);
+        }
+
+        if (password && password.trim() !== "") {
+            bcrypt.hash(password, 10, (err, hash) => {
+                db.run(`UPDATE users SET password = ?, coin = ?, status = ? WHERE id = ?`, [hash, coin, status, id]);
+            });
+        } else {
+            db.run(`UPDATE users SET coin = ?, status = ? WHERE id = ?`, [coin, status, id]);
+        }
+        res.json({ success: true });
+    });
 });
 
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
@@ -114,7 +126,7 @@ io.on('connection', (socket) => {
     socket.on('req_deposit', (amount) => {
         db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'DEPOSIT', ?, 'PENDING')`, [session.userId, session.username, amount], function() {
             io.to('admins').emit('admin_new_notif');
-            socket.emit('notif_msg', `✅ Request ${amount.toLocaleString()} terkirim!`);
+            socket.emit('notif_msg', `✅ Request ${amount.toLocaleString('id-ID')} terkirim!`);
         });
     });
 
@@ -130,7 +142,8 @@ io.on('connection', (socket) => {
         });
     });
 
-    socket.on('admin_approve_deposit', (id) => {
+    // APPROVE DEPO / WD
+    socket.on('admin_approve_tx', (id) => {
         if (session.role !== 'admin') return;
         db.get(`SELECT * FROM transactions WHERE id = ? AND status = 'PENDING'`, [id], (err, tx) => {
             if (!tx) return;
@@ -139,11 +152,34 @@ io.on('connection', (socket) => {
                 db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [tx.amount, tx.user_id], () => {
                     db.get(`SELECT coin FROM users WHERE id = ?`, [tx.user_id], (err, u) => {
                         io.to(`user_${tx.user_id}`).emit('update_coin', u.coin);
-                        io.to(`user_${tx.user_id}`).emit('notif_msg', `🎉 Deposit ${tx.amount.toLocaleString()} Approved!`);
+                        io.to(`user_${tx.user_id}`).emit('notif_msg', `🎉 Deposit ${tx.amount.toLocaleString('id-ID')} Approved!`);
+                    });
+                });
+            } else if (tx.type === 'WD') {
+                 io.to(`user_${tx.user_id}`).emit('notif_msg', `✅ Tarikan WD ${tx.amount.toLocaleString('id-ID')} Berhasil Dikirim Admin!`);
+            }
+            socket.emit('deposit_approved_success');
+        });
+    });
+
+    // REJECT DEPO / WD (DENGAN REFUND)
+    socket.on('admin_reject_tx', (data) => {
+        if (session.role !== 'admin') return;
+        const { id, reason } = data;
+        db.get(`SELECT * FROM transactions WHERE id = ? AND status = 'PENDING'`, [id], (err, tx) => {
+            if (!tx) return;
+            db.run(`UPDATE transactions SET status = 'REJECTED', note = ? WHERE id = ?`, [reason, id]);
+            
+            if (tx.type === 'WD') {
+                // REFUND SALDO KARENA WD DITOLAK
+                db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [tx.amount, tx.user_id], () => {
+                    db.get(`SELECT coin FROM users WHERE id = ?`, [tx.user_id], (err, u) => {
+                        io.to(`user_${tx.user_id}`).emit('update_coin', u.coin);
                     });
                 });
             }
-            socket.emit('deposit_approved_success');
+            io.to(`user_${tx.user_id}`).emit('notif_msg', `❌ ${tx.type} DITOLAK! Alasan: ${reason}`);
+            socket.emit('deposit_approved_success'); // refresh table admin
         });
     });
 
@@ -212,7 +248,7 @@ io.on('connection', (socket) => {
                         db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [win, session.userId], () => {
                             db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
                                 io.to(`user_${session.userId}`).emit('update_coin', u.coin);
-                                socket.emit('game_result', { game: 'spinwheel', status: multi >= 2 ? 'win' : 'lose', msg: `🎡 x${multi}! Dapat ${win.toLocaleString()}` });
+                                socket.emit('game_result', { game: 'spinwheel', status: multi >= 2 ? 'win' : 'lose', msg: `🎡 x${multi}! Dapat ${win.toLocaleString('id-ID')}` });
                             });
                         });
                     } else socket.emit('game_result', { game: 'spinwheel', status: 'lose', msg: `🎡 ZONK! Keluar x0` });
