@@ -2,73 +2,173 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LGOLUX - SPACEMAN</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>LGOLUX - SPACEMAN PRO</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
+    /* RESET & BASE */
+    :root { --blue-prime: #3b82f6; --green-prime: #10b981; --red-prime: #ef4444; --gold-prime: #d4af37; }
     body { margin: 0; background: #000; color: white; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; display: flex; justify-content: center;}
-    .game-container { width: 100%; max-width: 420px; height: 100vh; display: flex; flex-direction: column; background: #0f172a; position: relative;}
     
-    /* NAV ATAS */
-    .top-bar { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); z-index: 10;}
-    .btn-back { background: transparent; border: 1px solid #3b82f6; color: #3b82f6; padding: 5px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;}
-    .saldo-box { background: rgba(0,0,0,0.8); border: 1px solid #d4af37; padding: 5px 15px; border-radius: 8px; font-weight: bold; color: #d4af37;}
+    /* CONTAINER UTAMA - FIX TINGGI MOBILE */
+    .game-container { 
+        width: 100%; max-width: 420px; 
+        height: 100vh; /* Fallback */
+        height: 100dvh; /* Dynamic VH buat browser modern */
+        display: flex; flex-direction: column; 
+        background: #0f172a; position: relative;
+        overflow: hidden;
+    }
+    
+    /* NAV ATAS PREMIUM */
+    .top-bar { 
+        padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; 
+        background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%); 
+        position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+        /* Tambahin safe area atas buat iPhone */
+        padding-top: calc(15px + env(safe-area-inset-top, 0px));
+    }
+    .btn-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); color: white; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 12px;}
+    .saldo-box { background: rgba(0,0,0,0.8); border: 1px solid var(--gold-prime); padding: 8px 18px; border-radius: 10px; font-weight: 800; color: var(--gold-prime); box-shadow: 0 0 10px rgba(212,175,55,0.3);}
 
     /* LAYAR GAME LUAR ANGKASA */
     .screen { flex: 1; position: relative; background: radial-gradient(circle at center, #1e3a8a 0%, #020617 100%); overflow: hidden; display: flex; align-items: center; justify-content: center; flex-direction: column;}
+    
+    /* Partikel Bintang Jatuh */
     .stars { position: absolute; inset: 0; background-image: radial-gradient(white 1px, transparent 0); background-size: 25px 25px; opacity: 0.3; }
-    .stars.run { animation: moveStars 1s linear infinite; }
-    @keyframes moveStars { from { background-position: 0 0; } to { background-position: 0 50px; } }
+    .stars.run { animation: moveStars 0.8s linear infinite; }
+    @keyframes moveStars { from { background-position: 0 0; } to { background-position: 0 100px; } }
     
-    #s-multi { font-size: 60px; font-weight: 900; color: #fff; z-index: 10; text-shadow: 0 0 20px #3b82f6;}
-    #s-potensi { font-size: 20px; color: #10b981; font-weight: bold; z-index: 10; margin-top: 10px; display: none; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 10px;}
-    #s-roket { font-size: 60px; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); transition: all 0.1s linear; z-index: 5; text-shadow: 0 10px 20px rgba(59,130,246,0.8);}
-    
-    .status-msg { font-size: 16px; font-weight: bold; color: #ef4444; z-index: 10; position: absolute; top: 20px; text-transform: uppercase; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 5px; display: none;}
+    /* Garis Kecepatan */
+    .speed-lines { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(255,255,255,0.05) 20px, rgba(255,255,255,0.05) 21px); display: none;}
+    .speed-lines.run { display: block; animation: moveLines 0.2s linear infinite; }
+    @keyframes moveLines { from { background-position: 0 0; } to { background-position: 0 100px; } }
 
-    /* PANEL BETTING BAWAH */
-    .panel { background: #020617; padding: 20px; border-top: 2px solid #3b82f6; z-index: 10; border-radius: 20px 20px 0 0;}
-    input { width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 10px;}
+    /* ANGKA PERKALIAN SAKTI */
+    #s-multi { font-size: 80px; font-weight: 900; color: #fff; z-index: 10; text-shadow: 0 0 20px rgba(59,130,246,0.8); letter-spacing: -2px;}
+    
+    /* POTENSI MENANG (Running Coin) */
+    #s-potensi { font-size: 24px; color: var(--green-prime); font-weight: 800; z-index: 10; margin-top: -10px; display: none; background: rgba(0,0,0,0.6); padding: 8px 20px; border-radius: 30px; backdrop-filter: blur(5px); border: 1px solid rgba(16,185,129,0.3);}
+    
+    /* ====== VISUAL ASTRONAUT MENGEPAL TANGAN ====== */
+    .astro-container { 
+        width: 120px; height: 120px; 
+        position: absolute; bottom: 20px; left: 50%; 
+        transform: translateX(-50%) scale(0.8); 
+        transition: all 0.1s linear; z-index: 5;
+        display: flex; flex-direction: column; align-items: center;
+    }
+    
+    /* Badan Astronaut (CSS Shape Premium) */
+    .a-body { width: 40px; height: 50px; background: #e2e8f0; border-radius: 15px; position: relative; border: 3px solid #000;}
+    /* Helm */
+    .a-body::before { content:''; position: absolute; top:-25px; left:50%; transform: translateX(-50%); width: 45px; height: 40px; background: #fff; border-radius: 20px; border: 3px solid #000;}
+    /* Kaca Helm */
+    .a-body::after { content:''; position: absolute; top:-18px; left:50%; transform: translateX(-50%); width: 30px; height: 20px; background: #1e293b; border-radius: 10px; border: 2px solid #000; box-shadow: inset 0 5px 5px rgba(255,255,255,0.2);}
+    
+    /* Tangan Mengepal ke Atas (INI DIA BOSKU!) */
+    .a-fist { 
+        width: 15px; height: 25px; background: #fff; 
+        border-radius: 8px 8px 3px 3px; border: 3px solid #000; 
+        position: absolute; top: -15px; right: -20px; 
+        transform: rotate(15deg); 
+        box-shadow: inset 0 -5px 0 rgba(0,0,0,0.1);
+    }
+    /* Jari mengepal (garis kecil) */
+    .a-fist::after { content:''; position:absolute; top:5px; left:3px; width:5px; height:10px; border-left:2px solid #000;}
+    
+    /* Api Roket Jetpack (Jet api gila) */
+    .a-fire { position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); width: 20px; height: 40px; background: linear-gradient(180deg, #fff 0%, #ffea00 40%, #ffae00 70%, rgba(255,0,0,0) 100%); border-radius: 10px; filter: blur(2px); display: none;}
+    .run .a-fire { display: block; animation: flameA 0.1s infinite alternate; }
+    @keyframes flameA { from { height: 35px; opacity: 0.8; } to { height: 50px; opacity: 1; } }
+
+    /* STATUS MESSAGE (FOMO) */
+    .status-msg { font-size: 16px; font-weight: bold; color: #ef4444; z-index: 10; position: absolute; top: calc(100px + env(safe-area-inset-top, 0px)); text-transform: uppercase; background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 30px; display: none; text-align: center; max-width: 80%; border: 1px solid #ef4444; box-shadow: 0 0 15px rgba(239,68,68,0.3);}
+
+    /* ====== PANEL BETTING BAWAH (FIX MOBILE NAV) ====== */
+    .panel { 
+        background: #020617; 
+        padding: 20px; 
+        border-top: 2px solid rgba(59,130,246,0.3); 
+        z-index: 10; 
+        border-radius: 25px 25px 0 0;
+        box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+        /* KUNCI PERBAIKAN DI SINI: PADDING AMAN HP */
+        padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    }
+    
+    .input-row { display: flex; gap: 10px; margin-bottom: 10px;}
+    .in-box { flex: 1; }
+    .in-box label { font-size: 11px; color:#888; font-weight: bold; display: block; margin-bottom: 4px; text-transform: uppercase;}
+    
+    input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; font-size: 16px; font-weight: 800; text-align: center; outline: none; transition: 0.2s;}
+    input:focus { border-color: var(--blue-prime); box-shadow: 0 0 10px rgba(59,130,246,0.3);}
+    
     .chips { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px;}
-    .chips button { flex: 0 0 auto; background: #1e293b; color: #93c5fd; border: 1px solid #3b82f6; padding: 8px 12px; border-radius: 8px; font-weight: bold;}
-    .btn-action { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: 900; font-size: 18px; cursor: pointer; text-transform: uppercase; color: white; background: #3b82f6;}
-    .btn-action.cashout { background: #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.5); }
-    .btn-action.disabled { background: #475569; color: #94a3b8; cursor: not-allowed; box-shadow: none;}
+    .chips::-webkit-scrollbar { height: 4px; }
+    .chips::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    .chips button { flex: 0 0 auto; background: rgba(59,130,246,0.1); color: #fff; border: 1px solid rgba(59,130,246,0.3); padding: 10px 15px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer;}
+    .chips button:active { background: var(--blue-prime); }
+
+    /* TOMBOL AKSI UTAMA - PREMIUM */
+    .btn-action { 
+        width: 100%; padding: 18px; border-radius: 15px; border: none; 
+        font-weight: 900; font-size: 20px; cursor: pointer; text-transform: uppercase; 
+        color: white; background: linear-gradient(180deg, #60a5fa 0%, var(--blue-prime) 100%); 
+        box-shadow: 0 5px 15px rgba(59,130,246,0.4);
+        transition: 0.1s; outline: none;
+    }
+    .btn-action:active { transform: translateY(2px); box-shadow: 0 2px 5px rgba(59,130,246,0.4); }
+    
+    /* Tombol Cashout (Anti-Ketutup Nav HP) */
+    .btn-action.cashout { 
+        background: linear-gradient(180deg, #34d399 0%, var(--green-prime) 100%); 
+        box-shadow: 0 5px 20px rgba(16,185,129,0.5); 
+        animation: pulseWin 1s infinite;
+    }
+    @keyframes pulseWin { 0% { box-shadow: 0 5px 15px rgba(16,185,129,0.5); } 50% { box-shadow: 0 5px 25px rgba(16,185,129,0.8); } 100% { box-shadow: 0 5px 15px rgba(16,185,129,0.5); } }
+    
+    .btn-action.disabled { background: #475569; color: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none;}
   </style>
 </head>
 <body>
   <div class="game-container">
     <div class="top-bar">
-      <button class="btn-back" onclick="window.location.href='/'">🔙 KEMBALI</button>
+      <a href="/" class="btn-back">🔙 LOBI LGO</a>
       <div class="saldo-box">🪙 <span id="n-c">0</span></div>
     </div>
 
     <div class="screen">
       <div id="stars" class="stars"></div>
+      <div id="speed-lines" class="speed-lines"></div>
       <div id="status-msg" class="status-msg"></div>
+      
       <div id="s-multi">x1.00</div>
       <div id="s-potensi">🪙 0</div>
-      <div id="s-roket">👨‍🚀</div>
+      
+      <div id="a-container" class="astro-container">
+          <div class="a-fist"></div> <div class="a-body"></div> <div class="a-fire"></div> </div>
     </div>
 
     <div class="panel">
-      <div style="display: flex; gap: 10px;">
-        <div style="flex: 1;">
-            <label style="font-size: 11px; color:#888;">Bet (Koin)</label>
+      <div class="input-row">
+        <div class="in-box">
+            <label>JUMLAH BET</label>
             <input type="text" id="bet-input" placeholder="0" oninput="formatRupiah(this)">
         </div>
-        <div style="flex: 1;">
-            <label style="font-size: 11px; color:#888;">Auto Cashout (Opsional)</label>
-            <input type="number" id="auto-input" step="0.1" placeholder="x2.0">
+        <div class="in-box">
+            <label>AUTO CASHOUT (X)</label>
+            <input type="number" id="auto-input" step="0.1" placeholder="Kosong">
         </div>
       </div>
       
       <div class="chips">
         <button onclick="setBet(1000)">1K</button> <button onclick="setBet(5000)">5K</button>
-        <button onclick="setBet(10000)">10K</button> <button onclick="setBet(50000)">50K</button> <button onclick="setBet(100000)">MAX</button>
+        <button onclick="setBet(10000)">10K</button> <button onclick="setBet(50000)">50K</button> 
+        <button onclick="setBet(100000)">100K</button> <button onclick="setBet(500000)">500K</button> <button onclick="setBet(1000000)">MAX</button>
       </div>
 
-      <button id="btn-main" class="btn-action" onclick="startGame()">🚀 KONFIRMASI BET</button>
+      <button id="btn-main" class="btn-action" onclick="startGame()">🚀 PASANG BET</button>
     </div>
   </div>
 
@@ -96,116 +196,83 @@
       socket = io();
       socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID'));
       
-      // Terima target dari server
-      socket.on('start_spaceman', (data) => {
-          runSpaceman(data.crashPoint);
-      });
+      socket.on('start_spaceman', (data) => mulaiTerbang(data.crashPoint));
+      socket.on('spaceman_cashed_out', (data) => suksesCashout(data));
 
-      // Terima konfirmasi cashout
-      socket.on('spaceman_cashed_out', (data) => {
-          let btn = document.getElementById('btn-main');
-          btn.innerText = `✅ SUKSES CAIR: x${data.multi.toFixed(2)}`;
-          btn.className = 'btn-action disabled';
-          document.getElementById('s-potensi').style.color = '#fff';
-      });
-
-      // Kalau roket murni meledak (ZONK)
       socket.on('game_result', r => {
-          if(r.status === 'error') {
-              alert(r.msg);
-              resetUI();
-          }
+          if(r.status === 'error') { alert(r.msg); resetUI(); }
       });
     }
 
     function startGame() {
-        if(isFlying) {
-            cashout();
-            return;
-        }
-        
+        if(isFlying) { cashout(); return; }
         let b = parseInt(document.getElementById('bet-input').value.replace(/\./g, ''));
         const curr = parseInt(document.getElementById('n-c').innerText.replace(/\./g, '')) || 0;
-        
         if(!b || b <= 0) return alert("Isi bet dulu bosku!");
-        if(b > 1000000) return alert("Max Bet 1.000.000!");
         if(b > curr) return alert("Saldo kurang!");
-
         currentBet = b;
         autoVal = parseFloat(document.getElementById('auto-input').value) || 0;
-        
-        document.getElementById('s-multi').innerText = 'WAITING...';
-        document.getElementById('s-multi').style.color = '#fff';
-        document.getElementById('status-msg').style.display = 'none';
-        document.getElementById('btn-main').innerText = 'MEMUAT ROKET...';
+        document.getElementById('btn-main').innerText = 'MEMUAT...';
         document.getElementById('btn-main').className = 'btn-action disabled';
-
         socket.emit('play_spaceman', { betAmount: b });
     }
 
-    function runSpaceman(crashPoint) {
+    function mulaiTerbang(crashPoint) {
         targetMulti = crashPoint;
         currMulti = 1.00;
         isFlying = true;
         hasCashedOut = false;
-
         document.getElementById('stars').classList.add('run');
+        document.getElementById('speed-lines').classList.add('run');
+        document.getElementById('a-container').classList.add('run'); // Nyalain api roket
         document.getElementById('s-potensi').style.display = 'block';
-        document.getElementById('s-potensi').style.color = '#10b981';
-        
+        document.getElementById('s-potensi').style.color = 'var(--green-prime)';
+        document.getElementById('status-msg').style.display = 'none';
+        document.getElementById('s-roket').style.bottom = '20px';
         let btn = document.getElementById('btn-main');
-        btn.innerText = '💰 TARIK DANA';
-        btn.className = 'btn-action cashout';
+        btn.innerText = '💰 TARIK DANA'; btn.className = 'btn-action cashout';
 
         sInterval = setInterval(() => {
-            currMulti += 0.01 + (currMulti * 0.015); // Eksponensial
+            // Rumus naik eksponensial (makin lama makin gila speednya)
+            currMulti += 0.01 + (currMulti * 0.018); 
 
             if (currMulti >= targetMulti) {
-                // ROKET MELEDAK
-                currMulti = targetMulti;
-                isFlying = false;
-                clearInterval(sInterval);
-                
+                // MELEDAK (BUSTED)
+                currMulti = targetMulti; isFlying = false; clearInterval(sInterval);
                 document.getElementById('s-multi').innerText = 'x' + currMulti.toFixed(2);
-                document.getElementById('s-multi').style.color = '#ef4444'; // Merah
+                document.getElementById('s-multi').style.color = 'var(--red-prime)';
                 document.getElementById('stars').classList.remove('run');
-                document.getElementById('s-roket').innerText = '💥';
-                
-                let msg = document.getElementById('status-msg');
-                msg.style.display = 'block';
-                
-                // LOGIKA FOMO: Kalau dia udah cashout, ledek dia!
-                if(hasCashedOut) {
-                    msg.innerText = `Nyesel kan tarik duluan? Tembus x${targetMulti.toFixed(2)} nih! 🤣`;
-                    msg.style.color = '#34d399';
-                } else {
-                    msg.innerText = '💥 BUSTED! ROKET MELEDAK!';
-                    msg.style.color = '#ef4444';
-                    socket.emit('crash_spaceman'); // Lapor ke server kalau dia zonk
-                }
+                document.getElementById('speed-lines').classList.remove('run');
+                document.getElementById('a-container').classList.remove('run'); // Matiin api
+                document.getElementById('btn-main').style.display = 'none'; // Sembunyiin tombol WD
 
-                setTimeout(resetUI, 3000);
+                let msg = document.getElementById('status-msg'); msg.style.display = 'block';
+                if(hasCashedOut) {
+                    // LOGIKA FOMO BANDAR - LEDEK MEMBER
+                    msg.innerText = `Nyesel kan tarik duluan? Tembus x${targetMulti.toFixed(2)} nih! 🤪💸`;
+                    msg.style.color = 'var(--green-prime)'; msg.style.borderColor = 'var(--green-prime)';
+                } else {
+                    msg.innerText = '💥 BUSTED! SPACEMAN HANCUR!';
+                    msg.style.color = 'var(--red-prime)'; msg.style.borderColor = 'var(--red-prime)';
+                    socket.emit('crash_spaceman'); 
+                }
+                setTimeout(resetUI, 3500);
             } else {
-                // ROKET MASIH TERBANG
+                // TERBANG NORMAL
                 document.getElementById('s-multi').innerText = 'x' + currMulti.toFixed(2);
-                
                 if(!hasCashedOut) {
                     let runWin = Math.floor(currentBet * currMulti);
                     document.getElementById('s-potensi').innerText = '🪙 ' + runWin.toLocaleString('id-ID');
-                    
-                    // Goyang roket
-                    let shake = (Math.random() * 6) - 3;
-                    document.getElementById('s-roket').style.transform = `translateX(calc(-50% + ${shake}px))`;
-
-                    // Cek Auto Cashout
-                    if(autoVal > 1.0 && currMulti >= autoVal) {
-                        cashout(autoVal);
-                    }
+                    // Efek getar dikit
+                    let shake = (Math.random() * 4) - 2;
+                    document.getElementById('a-container').style.transform = `translateX(calc(-50% + ${shake}px)) scale(0.8)`;
+                    // Auto cashout cek
+                    if(autoVal > 1.0 && currMulti >= autoVal) cashout(autoVal);
                 } else {
-                    // KALAU UDAH CASHOUT, Roket tetep jalan nembus angkasa (BIAR FOMO)
-                    document.getElementById('s-multi').style.color = '#94a3b8'; // Warna pudar biar nyesel
-                    let shake = (Math.random() * 6) - 3;
-                    document.getElementById('s-roket').style.transform = `translateX(calc(-50% + ${shake}px)) translateY(-20px)`; // Roket makin menjauh
+                    // FOMO RUN - Roket menjauh
+                    document.getElementById('s-multi').style.color = '#475569';
+                    document.getElementById('a-container').style.transform = `translateX(-50%) translateY(-100px) scale(0.5)`;
+                    document.getElementById('a-container').style.opacity = `0.5`;
                 }
             }
         }, 50);
@@ -214,21 +281,29 @@
     function cashout(forced = null) {
         if(!isFlying || hasCashedOut) return;
         hasCashedOut = true;
-        
         let final = forced || currMulti;
         final = parseFloat(final.toFixed(2));
-        
         socket.emit('cashout_spaceman', { stoppedAt: final });
-        // NOTE: Interval TIDAK DIMATIKAN! Biar member liat roketnya terus terbang!
+    }
+
+    function suksesCashout(data) {
+        let btn = document.getElementById('btn-main');
+        btn.innerText = `✅ CAIR: x${data.multi.toFixed(2)}`;
+        btn.className = 'btn-action disabled';
+        document.getElementById('s-potensi').style.color = '#fff';
     }
 
     function resetUI() {
-        document.getElementById('btn-main').innerText = '🚀 KONFIRMASI BET';
+        isFlying = false; hasCashedOut = false;
+        document.getElementById('btn-main').style.display = 'block';
+        document.getElementById('btn-main').innerText = '🚀 PASANG BET';
         document.getElementById('btn-main').className = 'btn-action';
         document.getElementById('s-potensi').style.display = 'none';
-        document.getElementById('s-roket').innerText = '👨‍🚀';
-        document.getElementById('s-roket').style.transform = 'translateX(-50%)';
         document.getElementById('s-multi').style.color = '#fff';
+        document.getElementById('a-container').style.transform = `translateX(-50%) scale(0.8)`;
+        document.getElementById('a-container').style.opacity = `1`;
+        document.getElementById('a-container').classList.remove('run');
+        document.getElementById('a-body').innerText = '👨‍🚀'; // Reset visual meledak
     }
   </script>
 </body>
