@@ -6,339 +6,204 @@
   <title>LGOLUX - VIP Member</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
-    :root { 
-      --bg: #0a0a0a; --surface: #141414; --surface-2: #1f1f1f;
-      --gold: #d4af37; --gold-dark: #b5952f;
-      --text: #ffffff; --text-muted: #888888;
-      --border: rgba(255, 255, 255, 0.08);
-      --red: #ef4444; --green: #10b981;
-    }
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; display: flex; justify-content: center; min-height: 100vh;}
-    .app-container { width: 100%; max-width: 420px; background: var(--surface); position: relative; min-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(0,0,0,0.5);}
-    
-    /* AUTH VIEW */
-    .auth-view { padding: 40px 30px; text-align: center; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; box-sizing: border-box;}
-    .auth-view h1 { color: var(--gold); font-size: 32px; letter-spacing: 2px; margin-bottom: 5px;}
-    .auth-view input { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; outline: none; box-sizing: border-box; font-size: 14px;}
-    .auth-view input:focus { border-color: var(--gold); }
-    .btn-main { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; transition: 0.2s; font-size: 14px; text-transform: uppercase; background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);}
-    .btn-main:active { transform: scale(0.98); }
-    .link-text { color: var(--gold); font-size: 12px; cursor: pointer; margin-top: 15px; display: inline-block; }
+    :root { --bg: #0a0a0a; --surface: #141414; --gold: #d4af37; --text: #fff; --border: rgba(255,255,255,0.08); }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; overflow: hidden; }
+    .app { width: 100%; max-width: 420px; background: var(--surface); height: 100vh; display: flex; flex-direction: column; position: relative; }
     .hidden { display: none !important; }
-
-    /* MAIN APP VIEW */
-    .topbar { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 10;}
-    .user-info h4 { margin: 0; font-size: 16px; color: var(--gold); text-transform: uppercase;}
-    .user-info p { margin: 0; font-size: 12px; color: var(--text-muted); }
-    .logout-icon { color: var(--red); font-size: 20px; cursor: pointer; }
-
-    .content-area { padding: 20px; flex-grow: 1; padding-bottom: 80px; overflow-y: auto;}
     
-    /* CARDS */
-    .wallet-card { background: linear-gradient(135deg, #1f1c14, #141414); border: 1px solid rgba(212, 175, 55, 0.2); padding: 25px; border-radius: 16px; text-align: center; margin-bottom: 25px; position: relative; overflow: hidden;}
-    .wallet-card::after { content:''; position:absolute; top:0; right:0; width:100px; height:100px; background:radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 70%);}
-    .wallet-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;}
-    .wallet-balance { font-size: 36px; font-weight: 800; color: var(--gold); margin: 10px 0;}
+    /* AUTH */
+    .auth { padding: 40px; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+    input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--border); background: #000; color: #fff; box-sizing: border-box; }
+    .btn-main { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: 800; background: var(--gold); color: #000; cursor: pointer; text-transform: uppercase; }
 
-    .grid-games { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .game-card { background: var(--surface-2); border: 1px solid var(--border); padding: 20px 15px; border-radius: 16px; text-align: center; cursor: pointer; transition: 0.2s;}
-    .game-card:active { transform: scale(0.95); border-color: var(--gold);}
-    .game-icon { font-size: 32px; margin-bottom: 10px; }
-    .game-title { font-size: 13px; font-weight: bold; color: var(--text); }
-
-    /* BOTTOM NAV */
-    .bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 420px; background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid var(--border); z-index: 10;}
-    .nav-item { color: var(--text-muted); font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; transition: 0.3s;}
+    /* DASHBOARD */
+    .top { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .content { padding: 20px; flex: 1; overflow-y: auto; padding-bottom: 100px; }
+    .wallet { background: linear-gradient(135deg, #1f1c14, #141414); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(212,175,55,0.2); margin-bottom: 20px; }
+    .balance { font-size: 36px; font-weight: 800; color: var(--gold); }
+    
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .card { background: #1f1f1f; padding: 20px; border-radius: 15px; text-align: center; cursor: pointer; border: 1px solid var(--border); }
+    
+    /* NAV */
+    .nav { position: fixed; bottom: 0; width: 100%; max-width: 420px; background: #111; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid var(--border); }
+    .nav-item { font-size: 11px; text-align: center; color: #888; cursor: pointer; }
     .nav-item.active { color: var(--gold); }
-    .nav-icon { font-size: 20px; display: block; margin-bottom: 5px; }
 
-    /* MODALS */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px;}
-    .modal-content { background: var(--surface); width: 90%; max-width: 380px; padding: 25px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.5); animation: slideUp 0.3s ease;}
-    @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;}
-    .modal-header h3 { margin: 0; font-size: 16px; color: var(--gold);}
-    .close-modal { color: var(--text-muted); font-size: 24px; cursor: pointer; line-height: 1;}
-    .modal-content input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; outline: none; margin-bottom: 15px; box-sizing: border-box; text-align:center; font-weight:bold;}
+    /* MODAL */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: flex-end; }
+    .modal-box { width: 100%; background: var(--surface); padding: 30px; border-radius: 25px 25px 0 0; border-top: 2px solid var(--gold); animation: up 0.3s; }
+    @keyframes up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    /* ANIMASI GAMES */
+    .v-box { height: 60px; border: 2px solid var(--gold); border-radius: 10px; margin-bottom: 15px; position: relative; overflow: hidden; display: none; }
+    .v-strip { width: 1000px; height: 100%; background: repeating-linear-gradient(90deg, #ef4444 0 50px, #111 50px 100px); }
+    .v-strip.run { animation: move 0.1s infinite linear; }
+    @keyframes move { from { transform: translateX(0); } to { transform: translateX(-100px); } }
     
-    .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
-    .btn-half { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white;}
-    .status-msg { font-size: 13px; font-weight: bold; text-align: center; min-height: 20px; margin-top: 10px;}
-
-    /* 🎬 ====== ANIMASI GAME ====== 🎬 */
-
-    /* Animasi Roulette */
-    .anim-box-roulette { height: 50px; background: #000; border: 2px solid var(--gold); border-radius: 8px; margin-bottom: 15px; position: relative; overflow: hidden; display: none; }
-    .anim-box-roulette::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: rgba(255,255,255,0.9); transform: translateX(-50%); box-shadow: 0 0 10px #fff; z-index: 2; }
-    .anim-strip-roulette { width: 500%; height: 100%; background: repeating-linear-gradient(90deg, #ef4444 0 40px, #1f1f1f 40px 80px); transition: transform 0.2s;}
-    .anim-strip-roulette.animating { animation: slideRoulette 0.15s infinite linear; }
-    @keyframes slideRoulette { 0% { transform: translateX(0); } 100% { transform: translateX(-80px); } }
-
-    /* Animasi Coin Flip */
-    .anim-box-coinflip { perspective: 1000px; width: 80px; height: 80px; margin: 0 auto 15px auto; display: none; }
-    .anim-coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.5s ease-out;}
-    .anim-coin.animating { animation: flipCoin 0.15s infinite linear; }
-    .coin-face { position: absolute; width: 100%; height: 100%; border-radius: 50%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; font-size: 35px; border: 4px solid var(--gold); background: var(--surface-2); box-shadow: inset 0 0 15px rgba(212,175,55,0.3), 0 0 15px rgba(212,175,55,0.5);}
-    .coin-back { transform: rotateY(180deg); }
-    @keyframes flipCoin { 0% { transform: rotateX(0deg); } 100% { transform: rotateX(360deg); } }
-
-    /* Animasi Spin Wheel */
-    .anim-box-spinwheel { width: 120px; height: 120px; margin: 0 auto 15px auto; position: relative; display: none; }
-    .anim-box-spinwheel::after { content: '▼'; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); color: var(--gold); font-size: 24px; z-index: 2; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-    .anim-wheel { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--gold); background: conic-gradient(#ef4444 0 60deg, #1f1f1f 60deg 120deg, #ef4444 120deg 180deg, #1f1f1f 180deg 240deg, #ef4444 240deg 300deg, #1f1f1f 300deg 360deg); box-shadow: 0 0 20px rgba(212,175,55,0.3); transition: transform 1s ease-out;}
-    .anim-wheel.animating { animation: spinWheel 0.15s infinite linear; }
-    @keyframes spinWheel { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
+    .v-coin-box { width: 80px; height: 80px; margin: 0 auto 15px; perspective: 1000px; display: none; }
+    .v-coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: 2s; }
+    .v-coin.run { animation: flip 0.1s infinite linear; }
+    @keyframes flip { from { transform: rotateY(0); } to { transform: rotateY(360deg); } }
+    .v-face { position: absolute; width: 100%; height: 100%; border-radius: 50%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; font-size: 40px; background: #222; border: 3px solid var(--gold); }
   </style>
 </head>
 <body>
-
-  <div class="app-container">
-    
-    <div id="auth-view" class="auth-view">
-      <h1>👑 LGOLUX</h1>
-      <p style="color:var(--text-muted); font-size:13px; margin-bottom: 30px;">Premium Mobile Casino</p>
-      
-      <div id="form-login">
-        <input type="text" id="log-user" placeholder="Username" autocomplete="off">
-        <input type="password" id="log-pass" placeholder="Password">
-        <button class="btn-main" onclick="login()">Masuk Sistem</button>
-        <span class="link-text" onclick="toggleAuth('register')">Belum punya akun? Daftar Baru</span>
+  <div class="app">
+    <div id="auth-v" class="auth">
+      <h1 style="color:var(--gold)">👑 LGOLUX</h1>
+      <div id="f-login">
+        <input id="l-u" placeholder="Username">
+        <input id="l-p" type="password" placeholder="Password">
+        <button class="btn-main" onclick="login()">LOGIN</button>
+        <p style="font-size:12px; color:var(--gold)" onclick="toggleA()">Daftar Member Baru</p>
       </div>
-      
-      <div id="form-register" class="hidden">
-        <input type="text" id="reg-user" placeholder="Username Baru" autocomplete="off">
-        <input type="password" id="reg-pass" placeholder="Password Baru">
-        <button class="btn-main" onclick="register()">Daftar Akun VIP</button>
-        <span class="link-text" onclick="toggleAuth('login')">Kembali ke Login</span>
+      <div id="f-reg" class="hidden">
+        <input id="r-u" placeholder="Username Baru">
+        <input id="r-p" type="password" placeholder="Password Baru">
+        <button class="btn-main" onclick="reg()">DAFTAR VIP</button>
+        <p style="font-size:12px; color:var(--gold)" onclick="toggleA()">Sudah ada akun? Login</p>
       </div>
     </div>
 
-    <div id="app-view" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
-      <div class="topbar">
-        <div class="user-info">
-          <h4 id="mem-name">USER</h4>
-          <p>VIP Member</p>
-        </div>
-        <div class="logout-icon" onclick="logout()">⏏️</div>
+    <div id="main-v" class="hidden" style="height:100%">
+      <div class="top">
+        <b>ID: <span id="n-u" style="color:var(--gold)"></span></b>
+        <span onclick="logout()" style="color:red; font-size:12px; cursor:pointer">KELUAR</span>
       </div>
-
-      <div class="content-area">
-        <div id="tab-home">
-          <div class="wallet-card">
-            <div class="wallet-title">Total Saldo Kredit</div>
-            <div class="wallet-balance"><span style="font-size:24px;">🪙</span> <span id="mem-coin">0</span></div>
-            <button class="btn-main" style="padding: 10px; font-size:12px; width: 60%; margin: 0 auto; display:block;" onclick="openModal('modal-deposit')">+ TOP UP SALDO</button>
-          </div>
-          
-          <h4 style="margin-bottom: 15px; font-size: 14px;">🔥 Hot Games</h4>
-          <div class="grid-games">
-            <div class="game-card" onclick="openGame('roulette')">
-              <div class="game-icon">🎰</div><div class="game-title">Roulette Mini</div>
-            </div>
-            <div class="game-card" onclick="openGame('coinflip')">
-              <div class="game-icon">🪙</div><div class="game-title">Coin Flip</div>
-            </div>
-            <div class="game-card" style="grid-column: 1 / -1;" onclick="openGame('spinwheel')">
-              <div class="game-icon">🎡</div><div class="game-title">Spin Wheel (Roda Gila)</div>
-            </div>
-          </div>
+      <div class="content">
+        <div class="wallet">
+          <small>SALDO KREDIT</small>
+          <div class="balance">🪙 <span id="n-c">0</span></div>
+        </div>
+        <div class="grid">
+          <div class="card" onclick="openG('roulette')">🎰 Roulette</div>
+          <div class="card" onclick="openG('coinflip')">🪙 Coin Flip</div>
+          <div class="card" style="grid-column: 1/-1" onclick="openG('spinwheel')">🎡 Spin Wheel (Roda Gila)</div>
         </div>
       </div>
-
-      <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('home')">
-          <span class="nav-icon">🏠</span>Home
-        </div>
-        <div class="nav-item" onclick="openModal('modal-deposit')">
-          <span class="nav-icon">💳</span>Deposit
-        </div>
+      <div class="nav">
+        <div class="nav-item active">🏠 Home</div>
+        <div class="nav-item" onclick="openM('m-depo')">💳 Deposit</div>
+        <div class="nav-item" onclick="openM('m-wd')">💸 WD</div>
+        <div class="nav-item" onclick="showH()">📜 History</div>
       </div>
-    </div>
-
-  </div>
-
-  <div id="modal-deposit" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>💳 Form Deposit (Top-Up)</h3>
-        <span class="close-modal" onclick="closeModal('modal-deposit')">×</span>
-      </div>
-      <input type="number" id="depo-amount" placeholder="Ketik Nominal (Cth: 10000)">
-      <button class="btn-main" onclick="requestDeposit()">Kirim Permintaan</button>
     </div>
   </div>
 
-  <div id="modal-roulette" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>🎰 Roulette Mini (x2)</h3>
-        <span class="close-modal" onclick="closeModal('modal-roulette')">×</span>
-      </div>
-      <div id="visual-roulette" class="anim-box-roulette">
-        <div id="anim-roulette" class="anim-strip-roulette"></div>
-      </div>
-      <input type="number" id="bet-roulette" placeholder="Jumlah Taruhan (Koin)">
-      <div class="btn-group">
-        <button class="btn-half" style="background:#ef4444;" onclick="playGame('roulette', 'merah')">🔴 MERAH</button>
-        <button class="btn-half" style="background:#1f1f1f; border:1px solid #333;" onclick="playGame('roulette', 'hitam')">⚫ HITAM</button>
-      </div>
-      <div id="status-roulette" class="status-msg">Silakan pasang taruhan.</div>
+  <div id="m-depo" class="modal hidden">
+    <div class="modal-box">
+      <h3>💳 Deposit Koin</h3>
+      <input id="d-a" type="number" placeholder="Nominal Koin">
+      <button class="btn-main" onclick="doD()">KIRIM REQUEST</button>
+      <button onclick="closeM('m-depo')" style="width:100%; background:none; color:#888; border:none; margin-top:10px">TUTUP</button>
     </div>
   </div>
 
-  <div id="modal-coinflip" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>🪙 Coin Flip (x1.9)</h3>
-        <span class="close-modal" onclick="closeModal('modal-coinflip')">×</span>
+  <div id="m-wd" class="modal hidden">
+    <div class="modal-box">
+      <h3>💸 Tarik Koin (WD)</h3>
+      <input id="w-a" type="number" placeholder="Nominal WD">
+      <button class="btn-main" onclick="doW()">AJUKAN WD</button>
+      <button onclick="closeM('m-wd')" style="width:100%; background:none; color:#888; border:none; margin-top:10px">TUTUP</button>
+    </div>
+  </div>
+
+  <div id="m-hist" class="modal hidden">
+    <div class="modal-box" style="border-radius:0; height:80vh; overflow-y:auto">
+      <h3>📜 Histori Transaksi</h3>
+      <div id="h-list" style="font-size:12px"></div>
+      <button class="btn-main" onclick="closeM('m-hist')" style="margin-top:20px">TUTUP</button>
+    </div>
+  </div>
+
+  <div id="m-roulette" class="modal hidden">
+    <div class="modal-box">
+      <h3 style="color:var(--gold)">🎰 Roulette Mini (x2)</h3>
+      <div id="v-r-box" class="v-box"><div id="v-r-strip" class="v-strip"></div></div>
+      <input id="b-r" type="number" placeholder="Bet Koin">
+      <div style="display:flex; gap:10px">
+        <button onclick="playG('roulette', 'merah')" style="flex:1; background:red; color:white; padding:10px; border-radius:10px; border:none; font-weight:bold;">MERAH</button>
+        <button onclick="playG('roulette', 'hitam')" style="flex:1; background:#111; color:white; padding:10px; border-radius:10px; border:1px solid #333; font-weight:bold;">HITAM</button>
       </div>
-      <div id="visual-coinflip" class="anim-box-coinflip">
-        <div id="anim-coinflip" class="anim-coin">
-          <div class="coin-face">🔢</div>
-          <div class="coin-face coin-back">🖼️</div>
+      <p id="s-r" style="text-align:center; font-weight:800; margin-top:15px"></p>
+      <button onclick="closeM('m-roulette')" style="width:100%; border:none; background:none; color:#888">TUTUP</button>
+    </div>
+  </div>
+
+  <div id="m-coinflip" class="modal hidden">
+    <div class="modal-box">
+      <h3 style="color:var(--gold)">🪙 Coin Flip (x1.9)</h3>
+      <div id="v-c-box" class="v-coin-box">
+        <div id="v-c-coin" class="v-coin">
+          <div class="v-face">🔢</div><div class="v-face" style="transform:rotateY(180deg)">🖼️</div>
         </div>
       </div>
-      <input type="number" id="bet-coinflip" placeholder="Jumlah Taruhan (Koin)">
-      <div class="btn-group">
-        <button class="btn-half" style="background:#3b82f6;" onclick="playGame('coinflip', 'angka')">🔢 ANGKA</button>
-        <button class="btn-half" style="background:#8b5cf6;" onclick="playGame('coinflip', 'gambar')">🖼️ GAMBAR</button>
+      <input id="b-c" type="number" placeholder="Bet Koin">
+      <div style="display:flex; gap:10px">
+        <button onclick="playG('coinflip', 'angka')" style="flex:1; background:blue; color:white; padding:10px; border-radius:10px; border:none; font-weight:bold;">ANGKA</button>
+        <button onclick="playG('coinflip', 'gambar')" style="flex:1; background:purple; color:white; padding:10px; border-radius:10px; border:none; font-weight:bold;">GAMBAR</button>
       </div>
-      <div id="status-coinflip" class="status-msg">Tebak koin mendarat di mana.</div>
+      <p id="s-c" style="text-align:center; font-weight:800; margin-top:15px"></p>
+      <button onclick="closeM('m-coinflip')" style="width:100%; border:none; background:none; color:#888">TUTUP</button>
     </div>
   </div>
-
-  <div id="modal-spinwheel" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>🎡 Spin Wheel (Roda Gila)</h3>
-        <span class="close-modal" onclick="closeModal('modal-spinwheel')">×</span>
-      </div>
-      <div id="visual-spinwheel" class="anim-box-spinwheel">
-        <div id="anim-spinwheel" class="anim-wheel"></div>
-      </div>
-      <input type="number" id="bet-spinwheel" placeholder="Jumlah Taruhan (Koin)">
-      <button class="btn-main" onclick="playGame('spinwheel', 'spin')">🌀 PUTAR RODA</button>
-      <div id="status-spinwheel" class="status-msg">Pasang taruhan dan putar!</div>
-    </div>
-  </div>
-
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     let socket;
-    
-    // Inisialisasi
-    fetch('/api/me').then(r => r.json()).then(data => {
-      if(data.loggedIn) {
-        if(data.role === 'admin') window.location.href = '/admin'; 
-        else masukSistem(data);
-      }
-    });
+    fetch('/api/me').then(r => r.json()).then(d => { if(d.loggedIn) masuk(d); });
 
-    // UI Logics
-    function toggleAuth(type) {
-      document.getElementById('form-login').classList.toggle('hidden', type !== 'login');
-      document.getElementById('form-register').classList.toggle('hidden', type !== 'register');
-    }
+    function toggleA() { document.getElementById('f-login').classList.toggle('hidden'); document.getElementById('f-reg').classList.toggle('hidden'); }
+    function openM(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeM(id) { document.getElementById(id).classList.add('hidden'); }
+    function openG(g) { openM('m-'+g); document.getElementById('s-'+g.charAt(0)).innerText = ''; }
 
-    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-    
-    function openGame(game) { 
-      openModal(`modal-${game}`); 
-      document.getElementById(`status-${game}`).innerText = "Silakan pasang taruhan."; 
-      document.getElementById(`status-${game}`).style.color = "var(--text-muted)";
-      document.getElementById(`visual-${game}`).style.display = "none"; // Sembunyiin animasi pas awal buka
-    }
-
-    // Auth Actions
     async function login() {
-      const u = document.getElementById('log-user').value; const p = document.getElementById('log-pass').value;
-      if(!u || !p) return alert("Isi data dengan lengkap!");
-      const res = await fetch('/api/login', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) });
-      const data = await res.json();
-      if(data.success) { if(data.role === 'admin') window.location.href = '/admin'; else location.reload(); } 
-      else alert(data.msg);
+      const u = document.getElementById('l-u').value, p = document.getElementById('l-p').value;
+      const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) });
+      const d = await res.json(); if(d.success) location.reload(); else alert(d.msg);
     }
-
-    async function register() {
-      const u = document.getElementById('reg-user').value; const p = document.getElementById('reg-pass').value;
-      if(!u || !p) return alert("Isi data dengan lengkap!");
-      const res = await fetch('/api/register', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p, role:'member'}) });
-      const data = await res.json();
-      alert(data.msg); if(data.success) toggleAuth('login');
+    async function reg() {
+      const u = document.getElementById('r-u').value, p = document.getElementById('r-p').value;
+      const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) });
+      const d = await res.json(); alert(d.msg); if(d.success) toggleA();
     }
+    async function logout() { await fetch('/api/logout',{method:'POST'}); location.reload(); }
 
-    async function logout() { await fetch('/api/logout', {method:'POST'}); location.reload(); }
-
-    // Masuk Sistem Member
-    function masukSistem(data) {
-      document.getElementById('auth-view').classList.add('hidden');
-      document.getElementById('app-view').classList.remove('hidden');
-      document.getElementById('mem-name').innerText = data.username.toUpperCase();
-      document.getElementById('mem-coin').innerText = data.coin.toLocaleString();
-      
-      socket = io(); 
-      socket.on('update_coin', (coin) => document.getElementById('mem-coin').innerText = coin.toLocaleString());
-      socket.on('deposit_msg', (msg) => { alert(msg); closeModal('modal-deposit'); });
-      
-      // TERIMA HASIL GAME & BERHENTIKAN ANIMASI
-      socket.on('game_result', (res) => {
-        const st = document.getElementById(`status-${res.game}`);
-        const animEl = document.getElementById(`anim-${res.game}`);
-        
-        if(animEl) {
-          animEl.classList.remove('animating'); // Hentikan putaran gila
-          
-          // Efek Berhenti Natural
-          if(res.game === 'coinflip') {
-            animEl.style.transform = res.msg.includes('ANGKA') ? 'rotateX(0deg)' : 'rotateX(180deg)';
-          } else if (res.game === 'spinwheel') {
-            // Ngacak angle biar berasa asli berhentinya
-            const randomAngle = res.status === 'win' ? (Math.floor(Math.random() * 360) + 720) : (Math.floor(Math.random() * 90) + 720);
-            animEl.style.transform = `rotate(${randomAngle}deg)`;
-          } else if (res.game === 'roulette') {
-            animEl.style.transform = res.msg.includes('MERAH') ? 'translateX(0px)' : 'translateX(-40px)';
-          }
-        }
-
-        if(st) {
-          st.innerText = res.msg;
-          st.style.color = res.status === 'win' ? 'var(--green)' : (res.status === 'lose' ? 'var(--red)' : 'var(--gold)');
-        }
+    function masuk(d) {
+      document.getElementById('auth-v').classList.add('hidden');
+      document.getElementById('main-v').classList.remove('hidden');
+      document.getElementById('n-u').innerText = d.username.toUpperCase();
+      document.getElementById('n-c').innerText = d.coin.toLocaleString();
+      socket = io();
+      socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString());
+      socket.on('notif_msg', m => alert(m));
+      socket.on('game_result', r => {
+        const s = document.getElementById('s-'+r.game.charAt(0));
+        const v = document.getElementById('v-'+r.game.charAt(0)+'-'+(r.game=='roulette'?'strip':'coin'));
+        v.classList.remove('run');
+        if(r.game=='coinflip') v.style.transform = r.msg.includes('ANGKA') ? 'rotateY(0)' : 'rotateY(180deg)';
+        s.innerText = r.msg; s.style.color = r.status=='win'?'#0f0':'#f00';
       });
     }
 
-    function requestDeposit() {
-      const amt = document.getElementById('depo-amount').value;
-      if(amt > 0) socket.emit('req_deposit', parseInt(amt)); else alert("Nominal tidak valid!");
-      document.getElementById('depo-amount').value = '';
+    function doD() { const a = document.getElementById('d-a').value; socket.emit('req_deposit', parseInt(a)); closeM('m-depo'); }
+    function doW() { const a = document.getElementById('w-a').value; socket.emit('req_wd', parseInt(a)); closeM('m-wd'); }
+    async function showH() {
+      const r = await fetch('/api/history'); const d = await r.json();
+      let h = ''; d.forEach(x => { h += `<div style="border-bottom:1px solid #333; padding:10px"><b>${x.type}</b> | 🪙 ${x.amount.toLocaleString()} | <span style="color:${x.status=='SUCCESS'?'#0f0':'#f80'}">${x.status}</span><br><small>${x.date}</small></div>`; });
+      document.getElementById('h-list').innerHTML = h || 'Belum ada transaksi'; openM('m-hist');
     }
-    
-    function playGame(gameType, choice) {
-      const bet = parseInt(document.getElementById(`bet-${gameType}`).value);
-      if(!bet || bet <= 0) return alert('Isi taruhan dulu bosku!');
-      
-      const st = document.getElementById(`status-${gameType}`);
-      st.innerText = '🎲 Memutar mesin...';
-      st.style.color = 'var(--text)';
 
-      // Tampilkan dan Mulai Animasi!
-      document.getElementById(`visual-${gameType}`).style.display = 'block';
-      const animEl = document.getElementById(`anim-${gameType}`);
-      
-      // Reset rotasi sisa sebelumnya biar muternya lancar lagi
-      animEl.style.transform = 'none'; 
-      
-      // Kasih delay 10ms biar CSS paham kalau ini putaran baru
-      setTimeout(() => {
-        animEl.classList.add('animating');
-      }, 10);
-
-      if(gameType === 'roulette') socket.emit('play_roulette', { betAmount: bet, color: choice });
-      else if(gameType === 'coinflip') socket.emit('play_coinflip', { betAmount: bet, guess: choice });
-      else if(gameType === 'spinwheel') socket.emit('play_spinwheel', bet);
+    function playG(g, c) {
+      const b = parseInt(document.getElementById('b-'+g.charAt(0)).value);
+      if(!b || b<=0) return alert('Bet dulu bosku!');
+      document.getElementById('s-'+g.charAt(0)).innerText = '🎲 Memutar...';
+      const box = document.getElementById('v-'+g.charAt(0)+'-box'); box.style.display = 'block';
+      const v = document.getElementById('v-'+g.charAt(0)+'-'+(g=='roulette'?'strip':'coin'));
+      v.style.transform = 'none'; setTimeout(()=>v.classList.add('run'),10);
+      socket.emit('play_'+g, { betAmount:b, color:c, guess:c });
     }
   </script>
 </body>
