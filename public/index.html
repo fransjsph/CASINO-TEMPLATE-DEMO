@@ -52,19 +52,43 @@
     .nav-item.active { color: var(--gold); }
     .nav-icon { font-size: 20px; display: block; margin-bottom: 5px; }
 
-    /* MODALS (Popups) */
+    /* MODALS */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px;}
     .modal-content { background: var(--surface); width: 90%; max-width: 380px; padding: 25px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.5); animation: slideUp 0.3s ease;}
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px;}
     .modal-header h3 { margin: 0; font-size: 16px; color: var(--gold);}
     .close-modal { color: var(--text-muted); font-size: 24px; cursor: pointer; line-height: 1;}
-    .modal-content input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; outline: none; margin-bottom: 15px; box-sizing: border-box;}
+    .modal-content input { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: white; outline: none; margin-bottom: 15px; box-sizing: border-box; text-align:center; font-weight:bold;}
     
     .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
     .btn-half { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white;}
-    
     .status-msg { font-size: 13px; font-weight: bold; text-align: center; min-height: 20px; margin-top: 10px;}
+
+    /* 🎬 ====== ANIMASI GAME ====== 🎬 */
+
+    /* Animasi Roulette */
+    .anim-box-roulette { height: 50px; background: #000; border: 2px solid var(--gold); border-radius: 8px; margin-bottom: 15px; position: relative; overflow: hidden; display: none; }
+    .anim-box-roulette::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: rgba(255,255,255,0.9); transform: translateX(-50%); box-shadow: 0 0 10px #fff; z-index: 2; }
+    .anim-strip-roulette { width: 500%; height: 100%; background: repeating-linear-gradient(90deg, #ef4444 0 40px, #1f1f1f 40px 80px); transition: transform 0.2s;}
+    .anim-strip-roulette.animating { animation: slideRoulette 0.15s infinite linear; }
+    @keyframes slideRoulette { 0% { transform: translateX(0); } 100% { transform: translateX(-80px); } }
+
+    /* Animasi Coin Flip */
+    .anim-box-coinflip { perspective: 1000px; width: 80px; height: 80px; margin: 0 auto 15px auto; display: none; }
+    .anim-coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.5s ease-out;}
+    .anim-coin.animating { animation: flipCoin 0.15s infinite linear; }
+    .coin-face { position: absolute; width: 100%; height: 100%; border-radius: 50%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; font-size: 35px; border: 4px solid var(--gold); background: var(--surface-2); box-shadow: inset 0 0 15px rgba(212,175,55,0.3), 0 0 15px rgba(212,175,55,0.5);}
+    .coin-back { transform: rotateY(180deg); }
+    @keyframes flipCoin { 0% { transform: rotateX(0deg); } 100% { transform: rotateX(360deg); } }
+
+    /* Animasi Spin Wheel */
+    .anim-box-spinwheel { width: 120px; height: 120px; margin: 0 auto 15px auto; position: relative; display: none; }
+    .anim-box-spinwheel::after { content: '▼'; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); color: var(--gold); font-size: 24px; z-index: 2; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+    .anim-wheel { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--gold); background: conic-gradient(#ef4444 0 60deg, #1f1f1f 60deg 120deg, #ef4444 120deg 180deg, #1f1f1f 180deg 240deg, #ef4444 240deg 300deg, #1f1f1f 300deg 360deg); box-shadow: 0 0 20px rgba(212,175,55,0.3); transition: transform 1s ease-out;}
+    .anim-wheel.animating { animation: spinWheel 0.15s infinite linear; }
+    @keyframes spinWheel { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
   </style>
 </head>
 <body>
@@ -91,7 +115,6 @@
     </div>
 
     <div id="app-view" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
-      
       <div class="topbar">
         <div class="user-info">
           <h4 id="mem-name">USER</h4>
@@ -101,7 +124,6 @@
       </div>
 
       <div class="content-area">
-        
         <div id="tab-home">
           <div class="wallet-card">
             <div class="wallet-title">Total Saldo Kredit</div>
@@ -122,7 +144,6 @@
             </div>
           </div>
         </div>
-
       </div>
 
       <div class="bottom-nav">
@@ -143,8 +164,7 @@
         <h3>💳 Form Deposit (Top-Up)</h3>
         <span class="close-modal" onclick="closeModal('modal-deposit')">×</span>
       </div>
-      <p style="font-size:12px; color:var(--text-muted); margin-top:0;">Masukkan nominal koin yang ingin dibeli. Admin akan menyetujui request Anda.</p>
-      <input type="number" id="depo-amount" placeholder="Nominal (Contoh: 10000)">
+      <input type="number" id="depo-amount" placeholder="Ketik Nominal (Cth: 10000)">
       <button class="btn-main" onclick="requestDeposit()">Kirim Permintaan</button>
     </div>
   </div>
@@ -154,6 +174,9 @@
       <div class="modal-header">
         <h3>🎰 Roulette Mini (x2)</h3>
         <span class="close-modal" onclick="closeModal('modal-roulette')">×</span>
+      </div>
+      <div id="visual-roulette" class="anim-box-roulette">
+        <div id="anim-roulette" class="anim-strip-roulette"></div>
       </div>
       <input type="number" id="bet-roulette" placeholder="Jumlah Taruhan (Koin)">
       <div class="btn-group">
@@ -170,6 +193,12 @@
         <h3>🪙 Coin Flip (x1.9)</h3>
         <span class="close-modal" onclick="closeModal('modal-coinflip')">×</span>
       </div>
+      <div id="visual-coinflip" class="anim-box-coinflip">
+        <div id="anim-coinflip" class="anim-coin">
+          <div class="coin-face">🔢</div>
+          <div class="coin-face coin-back">🖼️</div>
+        </div>
+      </div>
       <input type="number" id="bet-coinflip" placeholder="Jumlah Taruhan (Koin)">
       <div class="btn-group">
         <button class="btn-half" style="background:#3b82f6;" onclick="playGame('coinflip', 'angka')">🔢 ANGKA</button>
@@ -185,7 +214,9 @@
         <h3>🎡 Spin Wheel (Roda Gila)</h3>
         <span class="close-modal" onclick="closeModal('modal-spinwheel')">×</span>
       </div>
-      <p style="font-size:12px; color:var(--text-muted); text-align:center;">Perkalian Acak: x0, x0.5, x1, x1.5, x2, x5</p>
+      <div id="visual-spinwheel" class="anim-box-spinwheel">
+        <div id="anim-spinwheel" class="anim-wheel"></div>
+      </div>
       <input type="number" id="bet-spinwheel" placeholder="Jumlah Taruhan (Koin)">
       <button class="btn-main" onclick="playGame('spinwheel', 'spin')">🌀 PUTAR RODA</button>
       <div id="status-spinwheel" class="status-msg">Pasang taruhan dan putar!</div>
@@ -213,7 +244,13 @@
 
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-    function openGame(game) { openModal(`modal-${game}`); document.getElementById(`status-${game}`).innerText = "Silakan pasang taruhan."; document.getElementById(`status-${game}`).style.color = "var(--text-muted)";}
+    
+    function openGame(game) { 
+      openModal(`modal-${game}`); 
+      document.getElementById(`status-${game}`).innerText = "Silakan pasang taruhan."; 
+      document.getElementById(`status-${game}`).style.color = "var(--text-muted)";
+      document.getElementById(`visual-${game}`).style.display = "none"; // Sembunyiin animasi pas awal buka
+    }
 
     // Auth Actions
     async function login() {
@@ -246,9 +283,26 @@
       socket.on('update_coin', (coin) => document.getElementById('mem-coin').innerText = coin.toLocaleString());
       socket.on('deposit_msg', (msg) => { alert(msg); closeModal('modal-deposit'); });
       
-      // Menerima hasil semua game
+      // TERIMA HASIL GAME & BERHENTIKAN ANIMASI
       socket.on('game_result', (res) => {
         const st = document.getElementById(`status-${res.game}`);
+        const animEl = document.getElementById(`anim-${res.game}`);
+        
+        if(animEl) {
+          animEl.classList.remove('animating'); // Hentikan putaran gila
+          
+          // Efek Berhenti Natural
+          if(res.game === 'coinflip') {
+            animEl.style.transform = res.msg.includes('ANGKA') ? 'rotateX(0deg)' : 'rotateX(180deg)';
+          } else if (res.game === 'spinwheel') {
+            // Ngacak angle biar berasa asli berhentinya
+            const randomAngle = res.status === 'win' ? (Math.floor(Math.random() * 360) + 720) : (Math.floor(Math.random() * 90) + 720);
+            animEl.style.transform = `rotate(${randomAngle}deg)`;
+          } else if (res.game === 'roulette') {
+            animEl.style.transform = res.msg.includes('MERAH') ? 'translateX(0px)' : 'translateX(-40px)';
+          }
+        }
+
         if(st) {
           st.innerText = res.msg;
           st.style.color = res.status === 'win' ? 'var(--green)' : (res.status === 'lose' ? 'var(--red)' : 'var(--gold)');
@@ -256,7 +310,6 @@
       });
     }
 
-    // Aksi Deposit & Game
     function requestDeposit() {
       const amt = document.getElementById('depo-amount').value;
       if(amt > 0) socket.emit('req_deposit', parseInt(amt)); else alert("Nominal tidak valid!");
@@ -268,8 +321,20 @@
       if(!bet || bet <= 0) return alert('Isi taruhan dulu bosku!');
       
       const st = document.getElementById(`status-${gameType}`);
-      st.innerText = '🎲 Memproses taruhan...';
+      st.innerText = '🎲 Memutar mesin...';
       st.style.color = 'var(--text)';
+
+      // Tampilkan dan Mulai Animasi!
+      document.getElementById(`visual-${gameType}`).style.display = 'block';
+      const animEl = document.getElementById(`anim-${gameType}`);
+      
+      // Reset rotasi sisa sebelumnya biar muternya lancar lagi
+      animEl.style.transform = 'none'; 
+      
+      // Kasih delay 10ms biar CSS paham kalau ini putaran baru
+      setTimeout(() => {
+        animEl.classList.add('animating');
+      }, 10);
 
       if(gameType === 'roulette') socket.emit('play_roulette', { betAmount: bet, color: choice });
       else if(gameType === 'coinflip') socket.emit('play_coinflip', { betAmount: bet, guess: choice });
