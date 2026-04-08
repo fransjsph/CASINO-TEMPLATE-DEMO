@@ -56,6 +56,15 @@
         <button class="btn-red" onclick="saveRTP()">UPDATE WIN RATE</button>
       </div>
 
+      <div class="card">
+        <h3>➕ Buat Akun Member Manual</h3>
+        <label style="font-size: 12px; color: #888;">Username Baru:</label>
+        <input type="text" id="new-mem-user" placeholder="Ketik Username">
+        <label style="font-size: 12px; color: #888;">Password Baru:</label>
+        <input type="text" id="new-mem-pass" placeholder="Ketik Password (Cth: player123)">
+        <button onclick="createMember()">DAFTARKAN MEMBER</button>
+      </div>
+
       <div class="card" style="grid-column: 1/-1">
         <h3>👥 Manajemen Member</h3>
         <div style="overflow-x:auto;">
@@ -111,6 +120,27 @@
 
     async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href = '/'; }
 
+    // FUNGSI BUAT AKUN MANUAL
+    async function createMember() {
+      const u = document.getElementById('new-mem-user').value; 
+      const p = document.getElementById('new-mem-pass').value;
+      if(!u || !p) return alert("Isi Username dan Password bosku!");
+      
+      const res = await fetch('/api/register', { 
+        method: 'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body: JSON.stringify({username:u, password:p, role:'member'}) 
+      });
+      const data = await res.json();
+      alert(data.msg);
+      
+      if(data.success) { 
+        document.getElementById('new-mem-user').value = ''; 
+        document.getElementById('new-mem-pass').value = ''; 
+        loadU(); // Otomatis refresh tabel member
+      }
+    }
+
     function masukAdmin() {
       document.getElementById('login-view').classList.add('hidden');
       document.getElementById('dash-view').classList.remove('hidden');
@@ -161,7 +191,6 @@
     async function saveU() {
       const c = document.getElementById('e-c').value, s = document.getElementById('e-s').value, p = document.getElementById('e-p').value, note = document.getElementById('e-note').value;
       
-      // Validasi wajib isi Keterangan kalau saldo diubah admin
       if (c != selectedUser.coin && !note.trim()) {
           return alert('BOSKU! Keterangan wajib diisi kalau saldo member diubah!');
       }
