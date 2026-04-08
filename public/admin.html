@@ -54,8 +54,14 @@
         <label style="font-size: 12px; color: #888;">SpinWheel Multiplier Rate (%)</label>
         <input type="number" id="r-s">
         <label style="font-size: 12px; color: #888;">Astronaut Win Rate (%)</label>
-        <input type="number" id="r-a" style="background:#0f172a; border:1px solid #334155; color:#fff; padding:12px; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom: 15px;">
-        <button class="btn-red" onclick="saveRTP()">UPDATE WIN RATE</button>
+        <input type="number" id="r-a">
+        <button class="btn-red" onclick="saveRTP()" style="margin-bottom: 20px;">UPDATE WIN RATE</button>
+
+        <hr style="border:0; border-bottom: 1px dashed #ef4444; margin: 15px 0;">
+        <h4 style="color:#ef4444; margin-top:0; margin-bottom:5px;">🚀 Force Multiplier Astronaut (1x Jalan)</h4>
+        <p style="font-size:11px; color:#888; margin-top:0;">Isi angka (contoh: 5000) agar ronde berikutnya pasti JP segitu, setelah itu otomatis kembali pakai RTP Normal.</p>
+        <input type="number" id="f-astro" placeholder="Contoh: 5000" style="background:#0f172a; border:1px solid #ef4444; color:#fff; padding:12px; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom: 10px;">
+        <button style="background:#ef4444; color: white;" onclick="forceAstro()">🚀 TEMBAK ROKET (1X)</button>
       </div>
 
       <div class="card">
@@ -120,7 +126,6 @@
       else document.getElementById('login-view').classList.remove('hidden'); 
     });
 
-    // FUNGSI FORMAT TITIK (1.000.000)
     function formatRupiah(obj) {
       let val = obj.value.replace(/[^0-9]/g, '');
       obj.value = val ? parseInt(val).toLocaleString('id-ID') : '';
@@ -170,12 +175,11 @@
         document.getElementById('tx-list').innerHTML = h || '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Antrean Kosong</td></tr>';
       });
       
-      // TAMBAHAN ASTRONAUT RTP DATA
       socket.on('rtp_data', d => { 
         document.getElementById('r-r').value=d.roulette; 
         document.getElementById('r-c').value=d.coinflip; 
         document.getElementById('r-s').value=d.spinwheel; 
-        document.getElementById('r-a').value=d.astronaut || 30; // SET ASTRONAUT WINRATE
+        document.getElementById('r-a').value=d.astronaut || 30; 
       });
 
       socket.on('deposit_approved_success', () => socket.emit('get_pending_deposits'));
@@ -192,7 +196,7 @@
     function openE(u) { 
         selectedUser = u; 
         document.getElementById('e-n').innerText = u.username.toUpperCase(); 
-        document.getElementById('curr-coin').innerText = '🪙 ' + u.coin.toLocaleString('id-ID'); // Nampilin Saldo Saat Ini
+        document.getElementById('curr-coin').innerText = '🪙 ' + u.coin.toLocaleString('id-ID'); 
         document.getElementById('e-adj').value = ''; 
         document.getElementById('e-note').value = ''; 
         document.getElementById('e-p').value = ''; 
@@ -202,23 +206,19 @@
     
     function closeM() { document.getElementById('m-edit').classList.add('hidden'); }
     
-    // LOGIKA ADJUSTMENT (TAMBAH / KURANG / SIMPAN SAJA)
     async function saveU(actionType) {
       let rawAdj = document.getElementById('e-adj').value.replace(/\./g, '');
       let adjAmount = parseInt(rawAdj) || 0;
       let note = document.getElementById('e-note').value.trim();
       let s = document.getElementById('e-s').value;
       let p = document.getElementById('e-p').value.trim();
-      
       let finalCoin = selectedUser.coin;
 
       if (actionType !== 'none') {
           if (adjAmount <= 0) return alert('BOSKU! Isi nominal adjustment-nya dulu!');
           if (!note) return alert('BOSKU! Keterangan wajib diisi kalau mau nambah/kurangin saldo!');
-          
-          if (actionType === 'add') {
-              finalCoin += adjAmount;
-          } else if (actionType === 'sub') {
+          if (actionType === 'add') finalCoin += adjAmount;
+          else if (actionType === 'sub') {
               if (finalCoin < adjAmount) return alert('BOSKU! Saldo member tidak cukup untuk dikurangi sebesar itu!');
               finalCoin -= adjAmount;
           }
@@ -231,23 +231,27 @@
       alert('✅ Berhasil Diupdate bosku!'); location.reload();
     }
     
-    function approve(id, type) { 
-        if(confirm(`Approve ${type} ini?`)) socket.emit('admin_approve_tx', id); 
-    }
-    
+    function approve(id, type) { if(confirm(`Approve ${type} ini?`)) socket.emit('admin_approve_tx', id); }
     function reject(id) {
         let alasan = prompt("Masukkan alasan penolakan (Contoh: Saldo tidak valid / Rekening salah):");
         if(alasan) socket.emit('admin_reject_tx', { id: id, reason: alasan });
     }
 
-    // TAMBAHAN ASTRONAUT SAVE RTP
     function saveRTP() { 
         socket.emit('update_rtp', { 
             roulette:document.getElementById('r-r').value, 
             coinflip:document.getElementById('r-c').value, 
             spinwheel:document.getElementById('r-s').value,
-            astronaut:document.getElementById('r-a').value // TAMBAHAN SAVE ASTRONAUT
+            astronaut:document.getElementById('r-a').value 
         }); 
+    }
+
+    // FUNGSI TEMBAK FORCE ASTRONAUT 1X JALAN
+    function forceAstro() {
+        let val = document.getElementById('f-astro').value;
+        if(!val || val <= 1) return alert("Isi angka perkalian lebih dari 1 bosku! (Contoh: 5000)");
+        socket.emit('force_astro', val);
+        document.getElementById('f-astro').value = '';
     }
   </script>
 </body>
