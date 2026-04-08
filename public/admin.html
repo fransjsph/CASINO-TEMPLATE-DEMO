@@ -11,7 +11,7 @@
     h3 { color:#10b981; margin-top:0; }
     table { width:100%; border-collapse:collapse; font-size:12px; min-width: 400px; }
     td, th { padding:10px; border-bottom:1px solid #334155; text-align:left; }
-    input, select { background:#0f172a; border:1px solid #334155; color:#fff; padding:12px; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom: 15px; outline:none; }
+    input, select { background:#0f172a; border:1px solid #334155; color:#fff; padding:12px; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom: 15px; outline:none; font-weight:bold; }
     button { background:#10b981; color:#000; border:none; padding:12px; border-radius:8px; font-weight:800; cursor:pointer; width: 100%; }
     .btn-red { background: #ef4444; color: white; }
     .modal { position:fixed; inset:0; background:rgba(0,0,0,0.8); display:flex; justify-content:center; align-items:center; z-index: 1000; padding: 20px;}
@@ -79,24 +79,32 @@
 
   <div id="m-edit" class="modal hidden">
     <div class="modal-box">
-      <h3>⚙️ Edit Member: <span id="e-n" style="color: #10b981;"></span></h3>
+      <h3 style="margin-bottom: 5px;">⚙️ Manage: <span id="e-n" style="color: #10b981;"></span></h3>
+      <p style="margin-top:0; color:#888; font-size:13px; margin-bottom: 20px;">Saldo Saat Ini: <b id="curr-coin" style="color:#d4af37; font-size: 16px;">🪙 0</b></p>
       
-      <label style="font-size: 12px; color: #888;">Ubah Saldo Koin:</label>
-      <input type="number" id="e-c">
+      <label style="font-size: 12px; color: #888;">Nominal Adjustment Saldo:</label>
+      <input type="text" id="e-adj" placeholder="Nominal Angka (Cth: 50.000)" oninput="formatRupiah(this)">
       
-      <label style="font-size: 12px; color: #ef4444; font-weight:bold;">Keterangan Adjustment (WAJIB jika saldo diubah):</label>
+      <label style="font-size: 12px; color: #ef4444; font-weight:bold;">Keterangan / Alasan Adjustment (WAJIB):</label>
       <input type="text" id="e-note" placeholder="Misal: Bonus JP / Tarik Saldo Penipu">
+      
+      <div style="display:flex; gap:10px; margin-bottom: 15px;">
+          <button onclick="saveU('add')" style="background:#10b981; color:#000; padding:10px;">➕ TAMBAHKAN</button>
+          <button onclick="saveU('sub')" style="background:#ef4444; color:#fff; padding:10px;">➖ KURANGKAN</button>
+      </div>
+
+      <hr style="border:0; border-bottom: 1px solid #334155; margin-bottom: 15px;">
       
       <label style="font-size: 12px; color: #888;">Ganti Password (Opsional):</label>
       <input type="text" id="e-p" placeholder="Kosongkan jika tidak ganti">
       
       <label style="font-size: 12px; color: #888;">Status Akun:</label>
       <select id="e-s">
-        <option value="AKTIF">AKTIF</option>
-        <option value="BLOKIR">BLOKIR</option>
+        <option value="AKTIF">AKTIF (Bisa Main)</option>
+        <option value="BLOKIR">BLOKIR (Banned)</option>
       </select>
       
-      <button onclick="saveU()">SIMPAN PERUBAHAN</button>
+      <button onclick="saveU('none')" style="background:#3b82f6; color:#fff; margin-top: 5px;">💾 SIMPAN STATUS/PW (TANPA SALDO)</button>
       <button onclick="closeM()" style="background:none; color:#ef4444; border:1px solid #ef4444; margin-top:10px">BATAL</button>
     </div>
   </div>
@@ -110,35 +118,30 @@
       else document.getElementById('login-view').classList.remove('hidden'); 
     });
 
+    // FUNGSI FORMAT TITIK (1.000.000)
+    function formatRupiah(obj) {
+      let val = obj.value.replace(/[^0-9]/g, '');
+      obj.value = val ? parseInt(val).toLocaleString('id-ID') : '';
+    }
+
     async function login() {
-      const u = document.getElementById('l-u').value, p = document.getElementById('l-p').value;
+      const u = document.getElementById('l-u').value.trim();
+      const p = document.getElementById('l-p').value.trim();
+      if(!u || !p) return alert("Isi lengkap bosku!");
       const res = await fetch('/api/login', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) });
       const d = await res.json();
-      if(d.success && d.role === 'admin') location.reload();
-      else alert("Akses Ditolak!");
+      if(d.success && d.role === 'admin') location.reload(); else alert("Akses Ditolak!");
     }
 
     async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href = '/'; }
 
-    // FUNGSI BUAT AKUN MANUAL
     async function createMember() {
-      const u = document.getElementById('new-mem-user').value; 
-      const p = document.getElementById('new-mem-pass').value;
+      const u = document.getElementById('new-mem-user').value.trim(); 
+      const p = document.getElementById('new-mem-pass').value.trim();
       if(!u || !p) return alert("Isi Username dan Password bosku!");
-      
-      const res = await fetch('/api/register', { 
-        method: 'POST', 
-        headers:{'Content-Type':'application/json'}, 
-        body: JSON.stringify({username:u, password:p, role:'member'}) 
-      });
-      const data = await res.json();
-      alert(data.msg);
-      
-      if(data.success) { 
-        document.getElementById('new-mem-user').value = ''; 
-        document.getElementById('new-mem-pass').value = ''; 
-        loadU(); // Otomatis refresh tabel member
-      }
+      const res = await fetch('/api/register', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p, role:'member'}) });
+      const data = await res.json(); alert(data.msg);
+      if(data.success) { document.getElementById('new-mem-user').value = ''; document.getElementById('new-mem-pass').value = ''; loadU(); }
     }
 
     function masukAdmin() {
@@ -173,33 +176,50 @@
 
     async function loadU() {
       const r = await fetch('/api/admin/users'); const d = await r.json();
-      let h = ''; d.forEach(x => { h += `<tr><td><b>${x.username.toUpperCase()}</b></td><td style="color:#10b981;">🪙 ${x.coin.toLocaleString('id-ID')}</td><td><span style="background:${x.status=='AKTIF'?'#065f46':'#7f1d1d'}; padding:2px 5px; border-radius:5px; font-size:10px;">${x.status}</span></td><td><button onclick='openE(${JSON.stringify(x)})' style="padding:5px 10px; width:auto;">Edit</button></td></tr>`; });
+      let h = ''; d.forEach(x => { h += `<tr><td><b>${x.username.toUpperCase()}</b></td><td style="color:#10b981;">🪙 ${x.coin.toLocaleString('id-ID')}</td><td><span style="background:${x.status=='AKTIF'?'#065f46':'#7f1d1d'}; padding:2px 5px; border-radius:5px; font-size:10px;">${x.status}</span></td><td><button onclick='openE(${JSON.stringify(x)})' style="padding:5px 10px; width:auto;">Manage</button></td></tr>`; });
       document.getElementById('u-list').innerHTML = h;
     }
 
     function openE(u) { 
         selectedUser = u; 
         document.getElementById('e-n').innerText = u.username.toUpperCase(); 
-        document.getElementById('e-c').value = u.coin; 
-        document.getElementById('e-s').value = u.status; 
+        document.getElementById('curr-coin').innerText = '🪙 ' + u.coin.toLocaleString('id-ID'); // Nampilin Saldo Saat Ini
+        document.getElementById('e-adj').value = ''; 
         document.getElementById('e-note').value = ''; 
+        document.getElementById('e-p').value = ''; 
+        document.getElementById('e-s').value = u.status; 
         document.getElementById('m-edit').classList.remove('hidden'); 
     }
     
-    function closeM() { document.getElementById('m-edit').classList.add('hidden'); document.getElementById('e-p').value = ''; }
+    function closeM() { document.getElementById('m-edit').classList.add('hidden'); }
     
-    async function saveU() {
-      const c = document.getElementById('e-c').value, s = document.getElementById('e-s').value, p = document.getElementById('e-p').value, note = document.getElementById('e-note').value;
+    // LOGIKA ADJUSTMENT (TAMBAH / KURANG / SIMPAN SAJA)
+    async function saveU(actionType) {
+      let rawAdj = document.getElementById('e-adj').value.replace(/\./g, '');
+      let adjAmount = parseInt(rawAdj) || 0;
+      let note = document.getElementById('e-note').value.trim();
+      let s = document.getElementById('e-s').value;
+      let p = document.getElementById('e-p').value.trim();
       
-      if (c != selectedUser.coin && !note.trim()) {
-          return alert('BOSKU! Keterangan wajib diisi kalau saldo member diubah!');
+      let finalCoin = selectedUser.coin;
+
+      if (actionType !== 'none') {
+          if (adjAmount <= 0) return alert('BOSKU! Isi nominal adjustment-nya dulu!');
+          if (!note) return alert('BOSKU! Keterangan wajib diisi kalau mau nambah/kurangin saldo!');
+          
+          if (actionType === 'add') {
+              finalCoin += adjAmount;
+          } else if (actionType === 'sub') {
+              if (finalCoin < adjAmount) return alert('BOSKU! Saldo member tidak cukup untuk dikurangi sebesar itu!');
+              finalCoin -= adjAmount;
+          }
       }
 
       await fetch('/api/admin/update-user', { 
           method:'POST', headers:{'Content-Type':'application/json'}, 
-          body:JSON.stringify({id: selectedUser.id, username: selectedUser.username, coin: c, status: s, password: p, note: note}) 
+          body:JSON.stringify({id: selectedUser.id, username: selectedUser.username, coin: finalCoin, status: s, password: p, note: note}) 
       });
-      alert('Data Member Berhasil Diupdate!'); location.reload();
+      alert('✅ Berhasil Diupdate bosku!'); location.reload();
     }
     
     function approve(id, type) { 
@@ -208,9 +228,7 @@
     
     function reject(id) {
         let alasan = prompt("Masukkan alasan penolakan (Contoh: Saldo tidak valid / Rekening salah):");
-        if(alasan) {
-            socket.emit('admin_reject_tx', { id: id, reason: alasan });
-        }
+        if(alasan) socket.emit('admin_reject_tx', { id: id, reason: alasan });
     }
 
     function saveRTP() { socket.emit('update_rtp', { roulette:document.getElementById('r-r').value, coinflip:document.getElementById('r-c').value, spinwheel:document.getElementById('r-s').value }); }
