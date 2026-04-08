@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>LGOLUX - SPIN WHEEL VIP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #d4af37; --bg-main: #0f172a; }
+    body { margin: 0; background: #000; color: white; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; display: flex; justify-content: center;}
+    
+    .game-container { width: 100%; max-width: 420px; height: 100dvh; display: flex; flex-direction: column; background: var(--bg-main); position: relative; overflow: hidden;}
+    
+    .top-bar { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%); position: absolute; top: 0; left: 0; right: 0; z-index: 10; padding-top: calc(15px + env(safe-area-inset-top, 0px)); }
+    .btn-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); color: white; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 12px;}
+    .saldo-box { background: rgba(0,0,0,0.8); border: 1px solid var(--gold); padding: 8px 18px; border-radius: 10px; font-weight: 800; color: var(--gold); box-shadow: 0 0 10px rgba(212,175,55,0.3);}
+
+    .screen { flex: 1; background: radial-gradient(circle at center, #1e293b 0%, #020617 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;}
+    
+    /* RODA GILA KASINO */
+    .v-spin-box { width: 280px; height: 280px; position: relative; margin-top: 20px;}
+    .v-spin-box::after { content: '▼'; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); color: #fff; z-index: 10; font-size: 40px; text-shadow: 0 5px 10px black; filter: drop-shadow(0 0 5px var(--gold));}
+    
+    .v-spin { 
+        width: 100%; height: 100%; border-radius: 50%; border: 6px solid var(--gold); box-sizing: border-box;
+        /* Urutan Warna: Merah(x0), Abu(x0.5), Biru(x1), Ungu(x1.5), Hijau(x2), Emas(x5) */
+        background: conic-gradient(
+            #ef4444 0 60deg, 
+            #64748b 60deg 120deg, 
+            #3b82f6 120deg 180deg, 
+            #a855f7 180deg 240deg, 
+            #10b981 240deg 300deg, 
+            #d4af37 300deg 360deg
+        );
+        transition: transform 3.5s cubic-bezier(0.2, 0.8, 0.1, 1);
+        box-shadow: 0 0 30px rgba(212,175,55,0.4), inset 0 0 20px rgba(0,0,0,0.5);
+        position: relative;
+    }
+    
+    /* Titik tengah roda */
+    .v-spin::after { content:''; position: absolute; top:50%; left:50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: #020617; border: 4px solid var(--gold); border-radius: 50%; z-index: 5;}
+    
+    .v-spin.run { animation: spinWheel 0.4s infinite linear; }
+    @keyframes spinWheel { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    .status-msg { font-size: 20px; font-weight: 900; color: #fff; margin-top: 30px; text-shadow: 0 0 10px rgba(0,0,0,0.8); height: 30px;}
+
+    /* Keterangan Multiplier Biar Member Paham */
+    .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; padding: 0 20px;}
+    .l-item { font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 5px; border-left: 10px solid;}
+
+    /* PANEL BAWAH */
+    .panel { background: #020617; padding: 20px; border-top: 2px solid var(--gold); z-index: 10; border-radius: 25px 25px 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));}
+    input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; font-size: 16px; font-weight: 800; text-align: center; outline: none; margin-bottom: 15px;}
+    .chips { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px;}
+    .chips::-webkit-scrollbar { height: 4px; }
+    .chips button { flex: 0 0 auto; background: rgba(212,175,55,0.1); color: var(--gold); border: 1px solid rgba(212,175,55,0.3); padding: 10px 15px; border-radius: 10px; font-weight: 800; font-size: 12px;}
+    
+    .btn-action { width: 100%; padding: 20px; border-radius: 12px; border: none; font-weight: 900; font-size: 20px; cursor: pointer; text-transform: uppercase; color: black; background: linear-gradient(180deg, #fef08a, var(--gold)); box-shadow: 0 5px 20px rgba(212,175,55,0.4); transition: 0.1s;}
+    .btn-action:active { transform: scale(0.98); }
+    
+    .disabled { filter: grayscale(1); opacity: 0.5; pointer-events: none;}
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="top-bar">
+      <a href="/" class="btn-back">🔙 LOBI LGO</a>
+      <div class="saldo-box">🪙 <span id="n-c">0</span></div>
+    </div>
+
+    <div class="screen">
+      <div class="v-spin-box"><div id="v-spin" class="v-spin"></div></div>
+      
+      <div class="legend">
+          <span class="l-item" style="border-color:#ef4444;">x0</span>
+          <span class="l-item" style="border-color:#64748b;">x0.5</span>
+          <span class="l-item" style="border-color:#3b82f6;">x1</span>
+          <span class="l-item" style="border-color:#a855f7;">x1.5</span>
+          <span class="l-item" style="border-color:#10b981;">x2</span>
+          <span class="l-item" style="border-color:#d4af37;">x5</span>
+      </div>
+
+      <div id="status-msg" class="status-msg">SIAP DIPUTAR</div>
+    </div>
+
+    <div class="panel" id="bet-panel">
+      <input type="text" id="bet-input" placeholder="Masukkan Bet (Koin)" oninput="formatRupiah(this)">
+      <div class="chips">
+        <button onclick="setBet(1000)">1K</button> <button onclick="setBet(5000)">5K</button>
+        <button onclick="setBet(10000)">10K</button> <button onclick="setBet(50000)">50K</button> 
+        <button onclick="setBet(100000)">100K</button> <button onclick="setBet(1000000)">MAX</button>
+      </div>
+      <button class="btn-action" onclick="playGame()">🌀 SPIN WHEEL</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket;
+    fetch('/api/me').then(r => r.json()).then(d => { if(!d.loggedIn) window.location.href = '/'; else masuk(d); });
+    function formatRupiah(obj) { let val = obj.value.replace(/[^0-9]/g, ''); obj.value = val ? parseInt(val).toLocaleString('id-ID') : ''; }
+    function setBet(val) { document.getElementById('bet-input').value = val.toLocaleString('id-ID'); }
+
+    function masuk(d) {
+      document.getElementById('n-c').innerText = d.coin.toLocaleString('id-ID');
+      socket = io();
+      socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID'));
+      
+      socket.on('game_result', r => {
+          if (r.game !== 'spinwheel') return;
+          const wheel = document.getElementById('v-spin');
+          wheel.classList.remove('run');
+          
+          if (r.status === 'error') {
+              alert(r.msg); resetUI(); return;
+          }
+          
+          let msgBox = document.getElementById('status-msg');
+          msgBox.innerText = r.msg;
+          msgBox.style.color = r.status === 'win' ? '#10b981' : '#ef4444';
+          
+          // Logika Sudut Berhenti (Biar jarum pas nunjuk warna yang bener)
+          // Urutan warna: Merah(x0), Abu(x0.5), Biru(x1), Ungu(x1.5), Hijau(x2), Emas(x5)
+          let stopRot = 1080; // Default 3 putaran penuh
+          
+          if (r.msg.includes('x0')) stopRot += 330;      // Nunjuk Merah
+          else if (r.msg.includes('x0.5')) stopRot += 270; // Nunjuk Abu
+          else if (r.msg.includes('x1!')) stopRot += 210;  // Nunjuk Biru
+          else if (r.msg.includes('x1.5')) stopRot += 150; // Nunjuk Ungu
+          else if (r.msg.includes('x2')) stopRot += 90;    // Nunjuk Hijau
+          else if (r.msg.includes('x5')) stopRot += 30;    // Nunjuk Emas
+          else stopRot += 330; // Zonk fallback
+          
+          wheel.style.transform = `rotate(${stopRot}deg)`;
+          
+          setTimeout(resetUI, 3500);
+      });
+    }
+
+    function playGame() {
+        let b = parseInt(document.getElementById('bet-input').value.replace(/\./g, ''));
+        const curr = parseInt(document.getElementById('n-c').innerText.replace(/\./g, '')) || 0;
+        
+        if(!b || b <= 0) return alert("Isi bet dulu bosku!");
+        if(b > 1000000) return alert("Max Bet 1.000.000!");
+        if(b > curr) return alert("Saldo kurang!");
+        
+        document.getElementById('bet-panel').classList.add('disabled');
+        document.getElementById('status-msg').innerText = '🎡 RODA BERPUTAR...';
+        document.getElementById('status-msg').style.color = '#fff';
+        
+        const wheel = document.getElementById('v-spin');
+        wheel.style.transform = 'none'; // Reset
+        setTimeout(() => wheel.classList.add('run'), 10);
+        
+        socket.emit('play_spinwheel', { betAmount: b });
+    }
+    
+    function resetUI() {
+        document.getElementById('bet-panel').classList.remove('disabled');
+        document.getElementById('status-msg').innerText = 'SIAP DIPUTAR';
+        document.getElementById('status-msg').style.color = '#fff';
+    }
+  </script>
+</body>
+</html>
