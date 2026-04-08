@@ -18,7 +18,7 @@ const db = new sqlite3.Database(dbPath);
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT DEFAULT 'member', coin INTEGER DEFAULT 0, status TEXT DEFAULT 'AKTIF')`);
     db.run(`CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, username TEXT, type TEXT, amount INTEGER, status TEXT DEFAULT 'PENDING', note TEXT, date DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    db.run(`ALTER TABLE transactions ADD COLUMN note TEXT`, (err) => {}); // Abaikan error kalau kolom udah ada
+    db.run(`ALTER TABLE transactions ADD COLUMN note TEXT`, (err) => {}); 
     
     bcrypt.hash('admin123', 10, (err, hash) => {
         db.run(`INSERT OR IGNORE INTO users (username, password, role, coin) VALUES ('admin', ?, 'admin', 9999999)`, [hash]);
@@ -31,11 +31,9 @@ app.use(sessionMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
 io.engine.use(sessionMiddleware);
 
-// --- API LOGIN & REGISTER (UDAH DIPASANG GEMBOK PENGAMAN) ---
 app.post('/api/register', (req, res) => {
     const { username, password, role } = req.body;
     if (!username || !password) return res.json({ success: false, msg: '⚠️ Username dan Password wajib diisi!' });
-
     const userRole = (role === 'admin' && req.session.role === 'admin') ? 'admin' : 'member'; 
     bcrypt.hash(password, 10, (err, hash) => {
         db.run(`INSERT INTO users (username, password, role) VALUES (?, ?, ?)`, [username, hash, userRole], function(err) {
@@ -48,11 +46,9 @@ app.post('/api/register', (req, res) => {
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.json({ success: false, msg: '⚠️ Username dan Password wajib diisi!' });
-
     db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, user) => {
         if (!user) return res.json({ success: false, msg: '❌ User tidak ditemukan!' });
         if (user.status === 'BLOKIR') return res.json({ success: false, msg: '🚫 ID ANDA DIBLOKIR BANDAR!' });
-        
         bcrypt.compare(password, user.password, (err, match) => {
             if (!match) return res.json({ success: false, msg: '❌ Password salah!' });
             req.session.userId = user.id;
@@ -225,11 +221,15 @@ io.on('connection', (socket) => {
         });
     });
 
-    socket.on('play_spinwheel', (betAmount) => {
+    // BUG FIX UTAMA SPIN WHEEL (NANGKEP DATA PAKET / OBJECT)
+    socket.on('play_spinwheel', (data) => {
+        const betAmount = data.betAmount; // Buka paketnya dulu biar jadi Angka
         if (betAmount > 100000) return socket.emit('game_result', { game: 'spinwheel', status: 'error', msg: '❌ Maksimal bet 100.000!' });
+        
         db.get(`SELECT coin, status FROM users WHERE id = ?`, [session.userId], (err, user) => {
             if (user.status === 'BLOKIR') return;
             if (user.coin < betAmount) return socket.emit('game_result', { game: 'spinwheel', status: 'error', msg: '❌ Saldo tidak cukup bosku!' });
+            
             db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [betAmount, session.userId], () => {
                 socket.emit('update_coin', user.coin - betAmount);
                 setTimeout(() => {
