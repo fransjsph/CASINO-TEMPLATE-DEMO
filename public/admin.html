@@ -13,16 +13,12 @@
     td, th { padding:10px; border-bottom:1px solid #334155; text-align:left; }
     input, select { background:#0f172a; border:1px solid #334155; color:#fff; padding:12px; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom: 15px; outline:none; }
     button { background:#10b981; color:#000; border:none; padding:12px; border-radius:8px; font-weight:800; cursor:pointer; width: 100%; }
+    .btn-red { background: #ef4444; color: white; }
     .modal { position:fixed; inset:0; background:rgba(0,0,0,0.8); display:flex; justify-content:center; align-items:center; z-index: 1000; padding: 20px;}
     .modal-box { background:#1e293b; padding:25px; border-radius:20px; width:100%; max-width:400px; border:1px solid #10b981; box-sizing: border-box;}
     .hidden { display:none !important; }
     .grid-layout { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-    
-    /* CSS KHUSUS HP BIAR RAPI */
-    @media (max-width: 768px) {
-      .grid-layout { grid-template-columns: 1fr; }
-      body { padding: 15px; }
-    }
+    @media (max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } body { padding: 15px; } }
   </style>
 </head>
 <body>
@@ -37,7 +33,7 @@
   <div id="dash-view" class="hidden">
     <div style="display: flex; justify-content: space-between; align-items: center; background:#1e293b; padding: 15px 20px; border-radius: 15px; margin-bottom: 20px;">
       <h2 style="margin:0; font-size: 18px;">💼 ADMIN PANEL</h2>
-      <button onclick="logout()" style="background: #ef4444; color: white; width: auto; padding: 8px 15px;">LOGOUT</button>
+      <button onclick="logout()" class="btn-red" style="width: auto; padding: 8px 15px;">LOGOUT</button>
     </div>
     
     <div class="grid-layout">
@@ -57,7 +53,7 @@
         <input type="number" id="r-c">
         <label style="font-size: 12px; color: #888;">SpinWheel Multiplier Rate (%)</label>
         <input type="number" id="r-s">
-        <button style="background:#ef4444; color: white;" onclick="saveRTP()">UPDATE WIN RATE</button>
+        <button class="btn-red" onclick="saveRTP()">UPDATE WIN RATE</button>
       </div>
 
       <div class="card" style="grid-column: 1/-1">
@@ -75,15 +71,22 @@
   <div id="m-edit" class="modal hidden">
     <div class="modal-box">
       <h3>⚙️ Edit Member: <span id="e-n" style="color: #10b981;"></span></h3>
+      
       <label style="font-size: 12px; color: #888;">Ubah Saldo Koin:</label>
       <input type="number" id="e-c">
+      
+      <label style="font-size: 12px; color: #ef4444; font-weight:bold;">Keterangan Adjustment (WAJIB jika saldo diubah):</label>
+      <input type="text" id="e-note" placeholder="Misal: Bonus JP / Tarik Saldo Penipu">
+      
       <label style="font-size: 12px; color: #888;">Ganti Password (Opsional):</label>
-      <input type="text" id="e-p" placeholder="Isi jika mau ganti">
+      <input type="text" id="e-p" placeholder="Kosongkan jika tidak ganti">
+      
       <label style="font-size: 12px; color: #888;">Status Akun:</label>
       <select id="e-s">
         <option value="AKTIF">AKTIF</option>
         <option value="BLOKIR">BLOKIR</option>
       </select>
+      
       <button onclick="saveU()">SIMPAN PERUBAHAN</button>
       <button onclick="closeM()" style="background:none; color:#ef4444; border:1px solid #ef4444; margin-top:10px">BATAL</button>
     </div>
@@ -91,15 +94,11 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    let socket, selectedId;
+    let socket, selectedUser;
 
-    // Cek Session saat pertama buka /admin
     fetch('/api/me').then(r => r.json()).then(d => { 
-      if(d.loggedIn && d.role === 'admin') {
-        masukAdmin(); // Kalau udah login, buka dashboard
-      } else {
-        document.getElementById('login-view').classList.remove('hidden'); // Kalau belum, munculin kotak login
-      }
+      if(d.loggedIn && d.role === 'admin') masukAdmin(); 
+      else document.getElementById('login-view').classList.remove('hidden'); 
     });
 
     async function login() {
@@ -107,7 +106,7 @@
       const res = await fetch('/api/login', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) });
       const d = await res.json();
       if(d.success && d.role === 'admin') location.reload();
-      else alert("Akses Ditolak! Anda bukan Admin atau Password salah.");
+      else alert("Akses Ditolak!");
     }
 
     async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href = '/'; }
@@ -120,7 +119,19 @@
       socket.emit('get_pending_deposits'); socket.emit('get_rtp');
       
       socket.on('admin_deposit_list', d => {
-        let h = ''; d.forEach(x => { h += `<tr><td>${x.username.toUpperCase()}</td><td><b style="color:${x.type=='DEPOSIT'?'#10b981':'#ef4444'}">${x.type}</b></td><td>${x.amount.toLocaleString()}</td><td><button onclick="approve(${x.id})" style="padding:5px 10px; width:auto;">Acc</button></td></tr>`; });
+        let h = ''; d.forEach(x => { 
+            h += `<tr>
+                <td>${x.username.toUpperCase()}</td>
+                <td><b style="color:${x.type=='DEPOSIT'?'#10b981':'#ef4444'}">${x.type}</b></td>
+                <td>${x.amount.toLocaleString('id-ID')}</td>
+                <td>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="approve(${x.id}, '${x.type}')" style="padding:5px; font-size:10px;">ACC</button>
+                        <button onclick="reject(${x.id})" class="btn-red" style="padding:5px; font-size:10px;">TOLAK</button>
+                    </div>
+                </td>
+            </tr>`; 
+        });
         document.getElementById('tx-list').innerHTML = h || '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Antrean Kosong</td></tr>';
       });
       
@@ -132,20 +143,47 @@
 
     async function loadU() {
       const r = await fetch('/api/admin/users'); const d = await r.json();
-      let h = ''; d.forEach(x => { h += `<tr><td><b>${x.username.toUpperCase()}</b></td><td style="color:#10b981;">🪙 ${x.coin.toLocaleString()}</td><td><span style="background:${x.status=='AKTIF'?'#065f46':'#7f1d1d'}; padding:2px 5px; border-radius:5px; font-size:10px;">${x.status}</span></td><td><button onclick='openE(${JSON.stringify(x)})' style="padding:5px 10px; width:auto;">Edit</button></td></tr>`; });
+      let h = ''; d.forEach(x => { h += `<tr><td><b>${x.username.toUpperCase()}</b></td><td style="color:#10b981;">🪙 ${x.coin.toLocaleString('id-ID')}</td><td><span style="background:${x.status=='AKTIF'?'#065f46':'#7f1d1d'}; padding:2px 5px; border-radius:5px; font-size:10px;">${x.status}</span></td><td><button onclick='openE(${JSON.stringify(x)})' style="padding:5px 10px; width:auto;">Edit</button></td></tr>`; });
       document.getElementById('u-list').innerHTML = h;
     }
 
-    function openE(u) { selectedId=u.id; document.getElementById('e-n').innerText=u.username.toUpperCase(); document.getElementById('e-c').value=u.coin; document.getElementById('e-s').value=u.status; document.getElementById('m-edit').classList.remove('hidden'); }
+    function openE(u) { 
+        selectedUser = u; 
+        document.getElementById('e-n').innerText = u.username.toUpperCase(); 
+        document.getElementById('e-c').value = u.coin; 
+        document.getElementById('e-s').value = u.status; 
+        document.getElementById('e-note').value = ''; 
+        document.getElementById('m-edit').classList.remove('hidden'); 
+    }
+    
     function closeM() { document.getElementById('m-edit').classList.add('hidden'); document.getElementById('e-p').value = ''; }
     
     async function saveU() {
-      const c = document.getElementById('e-c').value, s = document.getElementById('e-s').value, p = document.getElementById('e-p').value;
-      await fetch('/api/admin/update-user', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:selectedId, coin:c, status:s, password:p}) });
+      const c = document.getElementById('e-c').value, s = document.getElementById('e-s').value, p = document.getElementById('e-p').value, note = document.getElementById('e-note').value;
+      
+      // Validasi wajib isi Keterangan kalau saldo diubah admin
+      if (c != selectedUser.coin && !note.trim()) {
+          return alert('BOSKU! Keterangan wajib diisi kalau saldo member diubah!');
+      }
+
+      await fetch('/api/admin/update-user', { 
+          method:'POST', headers:{'Content-Type':'application/json'}, 
+          body:JSON.stringify({id: selectedUser.id, username: selectedUser.username, coin: c, status: s, password: p, note: note}) 
+      });
       alert('Data Member Berhasil Diupdate!'); location.reload();
     }
     
-    function approve(id) { if(confirm('Approve transaksi ini?')) socket.emit('admin_approve_deposit', id); }
+    function approve(id, type) { 
+        if(confirm(`Approve ${type} ini?`)) socket.emit('admin_approve_tx', id); 
+    }
+    
+    function reject(id) {
+        let alasan = prompt("Masukkan alasan penolakan (Contoh: Saldo tidak valid / Rekening salah):");
+        if(alasan) {
+            socket.emit('admin_reject_tx', { id: id, reason: alasan });
+        }
+    }
+
     function saveRTP() { socket.emit('update_rtp', { roulette:document.getElementById('r-r').value, coinflip:document.getElementById('r-c').value, spinwheel:document.getElementById('r-s').value }); }
   </script>
 </body>
