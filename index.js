@@ -58,7 +58,13 @@ io.on('connection', (socket) => {
 
     socket.on('get_rtp', () => { if (session.role === 'admin') socket.emit('rtp_data', { ...rtpBandar, astronaut: rtpBandar.spaceman, slot: rtpBandar.slot }); });
     socket.on('update_rtp', (newRtp) => { if (session.role === 'admin') { rtpBandar.roulette = newRtp.roulette; rtpBandar.coinflip = newRtp.coinflip; rtpBandar.spinwheel = newRtp.spinwheel; rtpBandar.spaceman = newRtp.astronaut || newRtp.spaceman || 30; rtpBandar.slot = newRtp.slot || 35; io.to('admins').emit('rtp_data', { ...rtpBandar, astronaut: rtpBandar.spaceman, slot: rtpBandar.slot }); socket.emit('notif_msg', '😈 Win Rate Normal Diperbarui!'); } });
-
+    socket.on('force_astro', (val) => { 
+        if (session.role === 'admin') { 
+            forceSpacemanMulti = parseFloat(val); 
+            socket.emit('notif_msg', `🚀 SUPER JP AKTIF: Spaceman berikutnya PASTI x${forceSpacemanMulti}!`); 
+        } 
+    });
+    
     socket.on('set_target_jp', (data) => { 
         if (session.role === 'admin') { 
             let targetUser = data.username.toLowerCase().trim();
