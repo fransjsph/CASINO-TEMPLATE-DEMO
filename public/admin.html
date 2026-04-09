@@ -67,30 +67,40 @@
 
         <hr style="border:0; border-bottom: 1px dashed #ef4444; margin: 15px 0;">
         <h4 style="color:#ef4444; margin-top:0; margin-bottom:5px;">🚀 Force Multiplier Astronaut (1x Jalan)</h4>
-        <p style="font-size:11px; color:#888; margin-top:0;">Isi angka (contoh: 5000) agar ronde berikutnya pasti JP segitu, setelah itu otomatis kembali pakai RTP Normal.</p>
+        <p style="font-size:11px; color:#888; margin-top:0;">Isi angka (contoh: 5000) agar ronde berikutnya pasti JP segitu.</p>
         <input type="number" id="f-astro" placeholder="Contoh: 5000" style="background:#0f172a; border:1px solid #ef4444; color:#fff; padding:12px; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom: 10px;">
         <button style="background:#ef4444; color: white;" onclick="forceAstro()">🚀 TEMBAK ROKET (1X)</button>
       </div>
 
       <div class="card" style="border-color:#a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.3);">
         <h3 style="color:#a855f7; margin-bottom: 5px;">🎯 PANEL DEWA (Target JP Slot)</h3>
-        <p style="font-size:10px; color:#888; margin-top:0;">Pilih member dan setting kemenangan mereka. Jackpot akan turun di putaran terakhir Freespin!</p>
+        <p style="font-size:10px; color:#888; margin-top:0;">Pilih member dan setting kemenangan mereka.</p>
         
         <label style="font-size: 11px; color: #fff;">Username Target:</label>
         <input type="text" id="jp-user" placeholder="Ketik persis nama user" style="border-color: #a855f7;">
         
         <label style="font-size: 11px; color: #fff;">Pilih Game Slot:</label>
-        <select id="jp-game" style="background:#0f172a; border:1px solid #a855f7; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
+        <select id="jp-game" onchange="toggleJpSettings()" style="background:#0f172a; border:1px solid #a855f7; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
             <option value="sweet">SWEET 1000 (Max x25.000)</option>
             <option value="zeus">LGOLUX GATES (Max x15.000)</option>
             <option value="princess">PRINCESS (Max x15.000)</option>
+            <option value="zeus_super">🔥 ZEUS SUPER SCATTER (Max x50.000)</option>
+            <option value="princess_super">🔥 PRINCESS SUPER SCATTER (Max x50.000)</option>
         </select>
 
         <label style="font-size: 11px; color: #fff;">Jenis Tembakan:</label>
-        <select id="jp-type" onchange="toggleJpType()" style="background:#0f172a; border:1px solid #a855f7; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
+        <select id="jp-type" onchange="toggleJpSettings()" style="background:#0f172a; border:1px solid #a855f7; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
             <option value="custom">Set Multiplier & Nominal Menang</option>
             <option value="maxwin">🔥 TEMBAK MAXWIN MENTOK!</option>
         </select>
+
+        <div id="super-maxwin-box" style="display: none;">
+            <label style="font-size: 11px; color: #fde047;">Mode Maxwin (Khusus Super):</label>
+            <select id="jp-super-mode" style="background:#0f172a; border:1px solid #fde047; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
+                <option value="instant">⚡ 4 Super Scatter Langsung (Instan)</option>
+                <option value="freespin">🎰 Lewat Freespin Biasa (Nyicil Natural)</option>
+            </select>
+        </div>
 
         <div id="jp-custom-box">
             <label style="font-size: 11px; color: #fff;">Pilih Bom Multiplier Terakhir:</label>
@@ -171,25 +181,12 @@
       else document.getElementById('login-view').classList.remove('hidden'); 
     });
 
-    function formatRupiah(obj) {
-      let val = obj.value.replace(/[^0-9]/g, '');
-      obj.value = val ? parseInt(val).toLocaleString('id-ID') : '';
-    }
-
-    async function login() {
-      const u = document.getElementById('l-u').value.trim();
-      const p = document.getElementById('l-p').value.trim();
-      if(!u || !p) return alert("Isi lengkap bosku!");
-      const res = await fetch('/api/login', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) });
-      const d = await res.json();
-      if(d.success && d.role === 'admin') location.reload(); else alert("Akses Ditolak!");
-    }
-
+    function formatRupiah(obj) { let val = obj.value.replace(/[^0-9]/g, ''); obj.value = val ? parseInt(val).toLocaleString('id-ID') : ''; }
+    async function login() { const u = document.getElementById('l-u').value.trim(); const p = document.getElementById('l-p').value.trim(); if(!u || !p) return alert("Isi lengkap bosku!"); const res = await fetch('/api/login', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p}) }); const d = await res.json(); if(d.success && d.role === 'admin') location.reload(); else alert("Akses Ditolak!"); }
     async function logout() { await fetch('/api/logout', {method:'POST'}); window.location.href = '/'; }
 
     async function createMember() {
-      const u = document.getElementById('new-mem-user').value.trim(); 
-      const p = document.getElementById('new-mem-pass').value.trim();
+      const u = document.getElementById('new-mem-user').value.trim(); const p = document.getElementById('new-mem-pass').value.trim();
       if(!u || !p) return alert("Isi Username dan Password bosku!");
       const res = await fetch('/api/register', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u, password:p, role:'member'}) });
       const data = await res.json(); alert(data.msg);
@@ -197,113 +194,49 @@
     }
 
     function masukAdmin() {
-      document.getElementById('login-view').classList.add('hidden');
-      document.getElementById('dash-view').classList.remove('hidden');
-      
-      socket = io(); loadU();
-      socket.emit('get_pending_deposits'); socket.emit('get_rtp');
-      
+      document.getElementById('login-view').classList.add('hidden'); document.getElementById('dash-view').classList.remove('hidden');
+      socket = io(); loadU(); socket.emit('get_pending_deposits'); socket.emit('get_rtp');
       socket.on('admin_deposit_list', d => {
-        let h = ''; d.forEach(x => { 
-            h += `<tr>
-                <td>${x.username.toUpperCase()}</td>
-                <td><b style="color:${x.type=='DEPOSIT'?'#10b981':'#ef4444'}">${x.type}</b></td>
-                <td>${x.amount.toLocaleString('id-ID')}</td>
-                <td>
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="approve(${x.id}, '${x.type}')" style="padding:5px; font-size:10px;">ACC</button>
-                        <button onclick="reject(${x.id})" class="btn-red" style="padding:5px; font-size:10px;">TOLAK</button>
-                    </div>
-                </td>
-            </tr>`; 
-        });
+        let h = ''; d.forEach(x => { h += `<tr><td>${x.username.toUpperCase()}</td><td><b style="color:${x.type=='DEPOSIT'?'#10b981':'#ef4444'}">${x.type}</b></td><td>${x.amount.toLocaleString('id-ID')}</td><td><div style="display:flex; gap:5px;"><button onclick="approve(${x.id}, '${x.type}')" style="padding:5px; font-size:10px;">ACC</button><button onclick="reject(${x.id})" class="btn-red" style="padding:5px; font-size:10px;">TOLAK</button></div></td></tr>`; });
         document.getElementById('tx-list').innerHTML = h || '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Antrean Kosong</td></tr>';
       });
-      
-      socket.on('rtp_data', d => { 
-        document.getElementById('r-r').value=d.roulette; 
-        document.getElementById('r-c').value=d.coinflip; 
-        document.getElementById('r-s').value=d.spinwheel; 
-        document.getElementById('r-a').value=d.astronaut || 30; 
-        document.getElementById('r-slot').value=d.slot || 35; // Tambah RTP Slot
-      });
-
-      socket.on('deposit_approved_success', () => socket.emit('get_pending_deposits'));
-      socket.on('admin_new_notif', () => socket.emit('get_pending_deposits'));
-      socket.on('notif_msg', m => alert(m));
+      socket.on('rtp_data', d => { document.getElementById('r-r').value=d.roulette; document.getElementById('r-c').value=d.coinflip; document.getElementById('r-s').value=d.spinwheel; document.getElementById('r-a').value=d.astronaut || 30; document.getElementById('r-slot').value=d.slot || 35; });
+      socket.on('deposit_approved_success', () => socket.emit('get_pending_deposits')); socket.on('admin_new_notif', () => socket.emit('get_pending_deposits')); socket.on('notif_msg', m => alert(m));
     }
 
     async function loadU() {
-      const r = await fetch('/api/admin/users'); const d = await r.json();
-      let h = ''; d.forEach(x => { h += `<tr><td><b>${x.username.toUpperCase()}</b></td><td style="color:#10b981;">🪙 ${x.coin.toLocaleString('id-ID')}</td><td><span style="background:${x.status=='AKTIF'?'#065f46':'#7f1d1d'}; padding:2px 5px; border-radius:5px; font-size:10px;">${x.status}</span></td><td><button onclick='openE(${JSON.stringify(x)})' style="padding:5px 10px; width:auto;">Manage</button></td></tr>`; });
+      const r = await fetch('/api/admin/users'); const d = await r.json(); let h = ''; d.forEach(x => { h += `<tr><td><b>${x.username.toUpperCase()}</b></td><td style="color:#10b981;">🪙 ${x.coin.toLocaleString('id-ID')}</td><td><span style="background:${x.status=='AKTIF'?'#065f46':'#7f1d1d'}; padding:2px 5px; border-radius:5px; font-size:10px;">${x.status}</span></td><td><button onclick='openE(${JSON.stringify(x)})' style="padding:5px 10px; width:auto;">Manage</button></td></tr>`; });
       document.getElementById('u-list').innerHTML = h;
     }
 
-    function openE(u) { 
-        selectedUser = u; 
-        document.getElementById('e-n').innerText = u.username.toUpperCase(); 
-        document.getElementById('curr-coin').innerText = '🪙 ' + u.coin.toLocaleString('id-ID'); 
-        document.getElementById('e-adj').value = ''; 
-        document.getElementById('e-note').value = ''; 
-        document.getElementById('e-p').value = ''; 
-        document.getElementById('e-s').value = u.status; 
-        document.getElementById('m-edit').classList.remove('hidden'); 
-    }
-    
+    function openE(u) { selectedUser = u; document.getElementById('e-n').innerText = u.username.toUpperCase(); document.getElementById('curr-coin').innerText = '🪙 ' + u.coin.toLocaleString('id-ID'); document.getElementById('e-adj').value = ''; document.getElementById('e-note').value = ''; document.getElementById('e-p').value = ''; document.getElementById('e-s').value = u.status; document.getElementById('m-edit').classList.remove('hidden'); }
     function closeM() { document.getElementById('m-edit').classList.add('hidden'); }
     
     async function saveU(actionType) {
-      let rawAdj = document.getElementById('e-adj').value.replace(/\./g, '');
-      let adjAmount = parseInt(rawAdj) || 0;
-      let note = document.getElementById('e-note').value.trim();
-      let s = document.getElementById('e-s').value;
-      let p = document.getElementById('e-p').value.trim();
-      let finalCoin = selectedUser.coin;
-
-      if (actionType !== 'none') {
-          if (adjAmount <= 0) return alert('BOSKU! Isi nominal adjustment-nya dulu!');
-          if (!note) return alert('BOSKU! Keterangan wajib diisi kalau mau nambah/kurangin saldo!');
-          if (actionType === 'add') finalCoin += adjAmount;
-          else if (actionType === 'sub') {
-              if (finalCoin < adjAmount) return alert('BOSKU! Saldo member tidak cukup untuk dikurangi sebesar itu!');
-              finalCoin -= adjAmount;
-          }
-      }
-
-      await fetch('/api/admin/update-user', { 
-          method:'POST', headers:{'Content-Type':'application/json'}, 
-          body:JSON.stringify({id: selectedUser.id, username: selectedUser.username, coin: finalCoin, status: s, password: p, note: note}) 
-      });
+      let rawAdj = document.getElementById('e-adj').value.replace(/\./g, ''); let adjAmount = parseInt(rawAdj) || 0; let note = document.getElementById('e-note').value.trim(); let s = document.getElementById('e-s').value; let p = document.getElementById('e-p').value.trim(); let finalCoin = selectedUser.coin;
+      if (actionType !== 'none') { if (adjAmount <= 0) return alert('BOSKU! Isi nominal adjustment-nya dulu!'); if (!note) return alert('BOSKU! Keterangan wajib diisi kalau mau nambah/kurangin saldo!'); if (actionType === 'add') finalCoin += adjAmount; else if (actionType === 'sub') { if (finalCoin < adjAmount) return alert('BOSKU! Saldo member tidak cukup!'); finalCoin -= adjAmount; } }
+      await fetch('/api/admin/update-user', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id: selectedUser.id, username: selectedUser.username, coin: finalCoin, status: s, password: p, note: note}) });
       alert('✅ Berhasil Diupdate bosku!'); location.reload();
     }
     
     function approve(id, type) { if(confirm(`Approve ${type} ini?`)) socket.emit('admin_approve_tx', id); }
-    function reject(id) {
-        let alasan = prompt("Masukkan alasan penolakan (Contoh: Saldo tidak valid / Rekening salah):");
-        if(alasan) socket.emit('admin_reject_tx', { id: id, reason: alasan });
-    }
+    function reject(id) { let alasan = prompt("Masukkan alasan penolakan:"); if(alasan) socket.emit('admin_reject_tx', { id: id, reason: alasan }); }
+    function saveRTP() { socket.emit('update_rtp', { roulette:document.getElementById('r-r').value, coinflip:document.getElementById('r-c').value, spinwheel:document.getElementById('r-s').value, astronaut:document.getElementById('r-a').value, slot:document.getElementById('r-slot').value }); }
+    function forceAstro() { let val = document.getElementById('f-astro').value; if(!val || val <= 1) return alert("Isi angka bosku!"); socket.emit('force_astro', val); document.getElementById('f-astro').value = ''; }
 
-    function saveRTP() { 
-        socket.emit('update_rtp', { 
-            roulette:document.getElementById('r-r').value, 
-            coinflip:document.getElementById('r-c').value, 
-            spinwheel:document.getElementById('r-s').value,
-            astronaut:document.getElementById('r-a').value,
-            slot:document.getElementById('r-slot').value // Kirim RTP Slot ke Server
-        }); 
-    }
-
-    function forceAstro() {
-        let val = document.getElementById('f-astro').value;
-        if(!val || val <= 1) return alert("Isi angka perkalian lebih dari 1 bosku! (Contoh: 5000)");
-        socket.emit('force_astro', val);
-        document.getElementById('f-astro').value = '';
-    }
-
-    // FUNGSI BARU: PANEL DEWA TARGET JP
-    function toggleJpType() {
+    // FUNGSI PANEL DEWA BARU
+    function toggleJpSettings() {
+        const game = document.getElementById('jp-game').value;
         const type = document.getElementById('jp-type').value;
+        
         document.getElementById('jp-custom-box').style.display = type === 'maxwin' ? 'none' : 'block';
+        
+        // Tampilkan opsi Super Maxwin kalau game-nya super & tipe maxwin
+        if ((game === 'zeus_super' || game === 'princess_super') && type === 'maxwin') {
+            document.getElementById('super-maxwin-box').style.display = 'block';
+        } else {
+            document.getElementById('super-maxwin-box').style.display = 'none';
+        }
     }
 
     function setTargetJP() {
@@ -315,7 +248,8 @@
             gameId: document.getElementById('jp-game').value,
             type: document.getElementById('jp-type').value,
             multi: document.getElementById('jp-multi').value,
-            targetWin: document.getElementById('jp-win').value || 0
+            targetWin: document.getElementById('jp-win').value || 0,
+            superMode: document.getElementById('jp-super-mode').value // Kirim mode super ke server
         };
 
         if (data.type === 'custom' && data.targetWin <= 0) return alert('Isi target menangnya bosku!');
