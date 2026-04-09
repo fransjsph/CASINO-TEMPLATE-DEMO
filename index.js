@@ -74,6 +74,13 @@ io.on('connection', (socket) => {
         'princess': [ { s:'👑', max:4.0 }, { s:'⭐', max:2.5 }, { s:'❤️', max:1.5 }, { s:'☀️', max:1.0 }, { s:'🌙', max:0.5 } ]
     };
 
+               // --- GAME SLOT V3 (TUMBLE & MAXWIN NATURAL) ---
+    const slotSymbols = {
+        'zeus': [ { s:'👑', max:4.0 }, { s:'⏳', max:2.5 }, { s:'💍', max:1.5 }, { s:'🛡️', max:1.0 }, { s:'💎', max:0.5 } ],
+        'sweet': [ { s:'🍭', max:4.0 }, { s:'🍬', max:2.5 }, { s:'🍇', max:1.5 }, { s:'🍉', max:1.0 }, { s:'🍌', max:0.5 } ],
+        'princess': [ { s:'👑', max:4.0 }, { s:'⭐', max:2.5 }, { s:'❤️', max:1.5 }, { s:'☀️', max:1.0 }, { s:'🌙', max:0.5 } ]
+    };
+
     socket.on('play_video_slot', (data) => {
         const { betAmount, spinType, gameId } = data; 
         
@@ -92,7 +99,6 @@ io.on('connection', (socket) => {
             db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [totalCost, session.userId], () => {
                 socket.emit('update_coin', user.coin - totalCost);
                 
-                // CEK TARGET JP (HURUF KECIL)
                 let uname = session.username.toLowerCase();
                 let isTargeted = targetedJP[uname] && targetedJP[uname].gameId === gameId;
                 let tData = isTargeted ? targetedJP[uname] : null;
@@ -104,60 +110,50 @@ io.on('connection', (socket) => {
                     let totalWin = 0;
                     let globalMulti = 0; 
                     let maxwinCap = (gameId === 'sweet') ? 25000 : 15000;
+                    let targetFinalWin = isTargeted ? ((tData.type === 'maxwin') ? (betAmount * maxwinCap) : tData.targetWin) : 0;
+                    let sisaTarget = targetFinalWin;
 
                     for(let i = 0; i < 15; i++) {
-                        // FIX LOGIKA MATEMATIKA TARGET MAXWIN (DI PUTARAN TERAKHIR)
-                        if (isTargeted && i === 14) {
-                            let targetFinalWin = (tData.type === 'maxwin') ? (betAmount * maxwinCap) : tData.targetWin;
-                            
-                            // Kurangin dulu sama kemenangan putaran 1-14
-                            let neededWin = targetFinalWin - totalWin; 
-                            if (neededWin < 0) neededWin = 0; 
-                            
-                            // Tembak petir x1000 aja sekalian kalau maxwin biar gahar layarnya
-                            let dropM = (tData.type === 'maxwin') ? 1000 : tData.multi; 
-                            
-                            if (gameId !== 'sweet') globalMulti += dropM;
-                            
-                            let reqBase = 0;
-                            if (gameId === 'sweet') {
-                                reqBase = Math.floor(neededWin / dropM);
+                        let spinWin = 0; let dropMulti = 0; let winSymbol = null;
+                        let symList = slotSymbols[gameId];
+                        let picked = symList[Math.floor(Math.random() * symList.length)];
+                        winSymbol = picked.s;
+
+                        // DISTRIBUSI MAXWIN NATURAL
+                        if (isTargeted) {
+                            // Biar natural, kita pecah kemenangannya di putaran tertentu (misal putaran ke 3, 7, 10, 14)
+                            if ([3, 7, 10, 14].includes(i) || (i === 14 && sisaTarget > 0)) {
+                                let portion = (i === 14) ? sisaTarget : Math.floor(sisaTarget * (Math.random() * 0.3 + 0.1));
+                                
+                                dropMulti = (tData.type === 'maxwin') ? [100, 250, 500, 1000][Math.floor(Math.random()*4)] : tData.multi;
+                                if (gameId !== 'sweet') globalMulti += dropMulti;
+                                
+                                // Hitung recehnya biar pas dikali jatuhnya sesuai portion
+                                let effectiveMulti = (gameId === 'sweet') ? dropMulti : (globalMulti > 0 ? globalMulti : 1);
+                                spinWin = Math.floor(portion / (effectiveMulti > 0 ? effectiveMulti : 1));
+                                
+                                sisaTarget -= (spinWin * effectiveMulti);
                             } else {
-                                reqBase = Math.floor(neededWin / (globalMulti > 0 ? globalMulti : 1));
+                                // Putaran kosong biar deg-degan
+                                spinWin = 0; dropMulti = 0;
                             }
+                        } else {
+                            // RNG NORMAL
+                            let isWinSpin = Math.random() < (rtpBandar.slot / 100);
+                            if (isWinSpin) spinWin = Math.floor(betAmount * (Math.random() * (picked.max - (picked.max/2)) + (picked.max/2)));
                             
-                            let symList = slotSymbols[gameId];
-                            let pickedSym = symList[0].s; 
-                            
-                            spinsData.push({ win: reqBase, multi: dropM, symbol: pickedSym });
-                            totalWin = targetFinalWin; // KUNCI MATI HASIL AKHIRNYA DI SINI
-                            continue;
-                        } else if (isTargeted) {
-                            // Biar gampang dan ngasih tegang, putaran 1-14 kosongin aja zonk
-                            spinsData.push({ win: 0, multi: 0, symbol: null });
-                            continue;
+                            if (isWinSpin && Math.random() < 0.35) {
+                                let multiList = [2, 5, 10, 15, 20, 25, 50, 100, 250, 500];
+                                if (gameId === 'sweet') multiList.push(1000); 
+                                dropMulti = multiList[Math.floor(Math.random() * multiList.length)];
+                                if (spinType === 'super' && Math.random() < 0.3) dropMulti = (Math.random() < 0.5) ? 500 : 1000; 
+                            }
                         }
 
-                        // RNG NORMAL
-                        let isWinSpin = Math.random() < (rtpBandar.slot / 100);
-                        let spinWin = 0; let winSymbol = null;
-                        
-                        if (isWinSpin) {
-                            let symList = slotSymbols[gameId];
-                            let picked = symList[Math.floor(Math.random() * symList.length)];
-                            winSymbol = picked.s;
-                            spinWin = Math.floor(betAmount * (Math.random() * (picked.max - (picked.max/2)) + (picked.max/2)));
-                        }
-
-                        let dropMulti = 0;
-                        if (isWinSpin && Math.random() < 0.35) {
-                            let multiList = [2, 5, 10, 15, 20, 25, 50, 100, 250, 500];
-                            if (gameId === 'sweet') multiList.push(1000); 
-                            dropMulti = multiList[Math.floor(Math.random() * multiList.length)];
-                            if (spinType === 'super' && Math.random() < 0.3) dropMulti = (Math.random() < 0.5) ? 500 : 1000; 
-                        }
-
-                        spinsData.push({ win: spinWin, multi: dropMulti, symbol: winSymbol });
+                        // Catat Data Putaran
+                        // tumbles: simulasi jumlah runtuhan per putaran (1 sampai 3 runtuhan kalau menang)
+                        let numTumbles = spinWin > 0 ? Math.floor(Math.random() * 3) + 1 : 0;
+                        spinsData.push({ win: spinWin, multi: dropMulti, symbol: winSymbol, tumbles: numTumbles });
                         
                         if (gameId === 'sweet') { totalWin += spinWin * (dropMulti > 0 ? dropMulti : 1); } 
                         else {
@@ -167,22 +163,26 @@ io.on('connection', (socket) => {
                     }
 
                     if (totalWin > betAmount * maxwinCap) totalWin = betAmount * maxwinCap;
-                    if (isTargeted) delete targetedJP[uname]; // HAPUS TARGET
+                    if (isTargeted) delete targetedJP[uname];
 
                     db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [totalWin, session.userId], () => {
                         db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
-                            socket.emit('slot_freespin_start', { spins: spinsData, finalWin: totalWin, finalCoin: u.coin });
+                            // Kirim data trigger scatter kalau bukan beli (Murni dapet)
+                            let isMurni = spinType === 'manual';
+                            socket.emit('slot_freespin_start', { spins: spinsData, finalWin: totalWin, finalCoin: u.coin, isMurni });
                         });
                     });
 
                 } else {
                     const isWin = Math.random() < (rtpBandar.slot / 100);
-                    let normalWin = 0; let winSymbol = null;
+                    let normalWin = 0; let winSymbol = null; let numTumbles = 0;
+                    
                     if (isWin) {
                         let symList = slotSymbols[gameId];
                         let picked = symList[Math.floor(Math.random() * symList.length)];
                         winSymbol = picked.s;
                         normalWin = Math.floor(betAmount * (Math.random() * (picked.max - (picked.max/2)) + (picked.max/2)));
+                        numTumbles = Math.floor(Math.random() * 3) + 1; // 1-3 runtuhan
                     }
 
                     let dropMulti = 0;
@@ -196,17 +196,16 @@ io.on('connection', (socket) => {
                         db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [normalWin, session.userId], () => {
                             db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
                                 io.to(`user_${session.userId}`).emit('update_coin', u.coin);
-                                socket.emit('slot_normal_result', { status: 'win', winAmount: normalWin, multi: dropMulti, symbol: winSymbol });
+                                socket.emit('slot_normal_result', { status: 'win', winAmount: normalWin, multi: dropMulti, symbol: winSymbol, tumbles: numTumbles });
                             });
                         });
                     } else {
-                        socket.emit('slot_normal_result', { status: 'lose', winAmount: 0, multi: 0, symbol: null });
+                        socket.emit('slot_normal_result', { status: 'lose', winAmount: 0, multi: 0, symbol: null, tumbles: 0 });
                     }
                 }
             });
         });
-    });
-
+    });                
     socket.on('req_deposit', (a) => { db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'DEPOSIT', ?, 'PENDING')`, [session.userId, session.username, a], () => { io.to('admins').emit('admin_new_notif'); socket.emit('notif_msg', `✅ Request terkirim!`); }); });
     socket.on('req_wd', (a) => { db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => { if (!u || u.coin < a) return socket.emit('notif_msg', '❌ Saldo tidak cukup!'); db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [a, session.userId], () => { db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'WD', ?, 'PENDING')`, [session.userId, session.username, a]); io.to(`user_${session.userId}`).emit('update_coin', u.coin - a); io.to('admins').emit('admin_new_notif'); socket.emit('notif_msg', '💸 WD Diproses!'); }); }); });
     socket.on('admin_approve_tx', (id) => { if(session.role!=='admin') return; db.get(`SELECT * FROM transactions WHERE id=? AND status='PENDING'`,[id], (err,tx)=>{ if(!tx)return; db.run(`UPDATE transactions SET status='SUCCESS' WHERE id=?`,[id]); if(tx.type==='DEPOSIT'){ db.run(`UPDATE users SET coin=coin+? WHERE id=?`,[tx.amount, tx.user_id],()=>{ db.get(`SELECT coin FROM users WHERE id=?`,[tx.user_id],(err,u)=>io.to(`user_${tx.user_id}`).emit('update_coin',u.coin)); }); } socket.emit('deposit_approved_success'); }); });
