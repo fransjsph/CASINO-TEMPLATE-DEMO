@@ -21,24 +21,20 @@
     .btn-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 12px;}
     .saldo-box { background: rgba(0,0,0,0.8); border: 1px solid var(--gold); padding: 8px 18px; border-radius: 10px; font-weight: 800; color: var(--gold);}
     
-    .screen { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 40px; position: relative;}
+    .screen { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 30px; position: relative;}
     .game-title { font-size: 32px; font-weight: 900; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8), 0 0 10px #f43f5e; margin-bottom: 5px; font-style: italic;}
     
     .total-multi-box { background: rgba(0,0,0,0.7); border: 2px solid var(--gold); border-radius: 15px; padding: 5px 20px; display: none; flex-direction: column; align-items: center; margin-bottom: 10px; box-shadow: 0 0 20px rgba(245,158,11,0.5);}
     .tm-label { font-size: 10px; color: var(--gold); font-weight: bold;}
     .tm-val { font-size: 28px; font-weight: 900; color: #fff;}
 
-    /* GRID & ANIMASI TUMBLE (JATUH DARI ATAS) */
     .slot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 15px; border: 3px solid #9f1239; width: 92%; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); position: relative;}
-    .slot-cell { aspect-ratio: 1; background: #4c0519; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;}
+    .slot-cell { aspect-ratio: 1; background: #4c0519; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 35px; position: relative; overflow: hidden;}
     
     .simbol-item { font-size: 35px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); transition: 0.2s;}
-    
-    /* Runtuh dari langit */
     .simbol-item.drop { animation: dropDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     @keyframes dropDown { 0% { transform: translateY(-200%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
 
-    /* Pecah (Pop) */
     .simbol-item.break { animation: popBreak 0.3s forwards; }
     @keyframes popBreak { 50% { transform: scale(1.5); filter: brightness(2); } 100% { transform: scale(0); opacity: 0; } }
 
@@ -48,9 +44,14 @@
     .float-coin.show { animation: floatUp 1s ease-out forwards; }
     @keyframes floatUp { 0% { transform: translate(-50%, -10%); opacity: 1; } 100% { transform: translate(-50%, -100px); opacity: 0; } }
 
-    /* SCATTER LOLLIPOP */
     .scatter-icon { font-size: 40px; animation: pulseScatter 1s infinite; filter: drop-shadow(0 0 10px #f43f5e);}
     @keyframes pulseScatter { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+    /* KEMENANGAN SEMENTARA (SPIN WIN) */
+    .spin-win-box { background: rgba(0,0,0,0.8); border: 2px solid #10b981; border-radius: 15px; padding: 5px 20px; margin-top: 15px; text-align: center; display: none; box-shadow: 0 0 15px rgba(16,185,129,0.4); animation: popWin 0.3s ease-out;}
+    @keyframes popWin { 0% { transform: scale(0.5); opacity: 0;} 100% { transform: scale(1); opacity: 1;} }
+    .sw-label { font-size: 10px; color: #fff; font-weight: bold; letter-spacing: 1px;}
+    .sw-val { font-size: 26px; font-weight: 900; color: #10b981; transition: color 0.3s;}
 
     .status-msg { font-size: 14px; font-weight: 900; color: #fff; z-index: 10; margin-top: 10px; background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 30px; text-align: center; border: 1px solid #f43f5e; display: none;}
 
@@ -82,7 +83,6 @@
     .btn-yes { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #10b981; color: white; font-weight: 900; font-size: 16px; cursor: pointer;}
     .btn-no { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #ef4444; color: white; font-weight: 900; font-size: 16px; cursor: pointer;}
 
-    /* MODAL CONGRATULATIONS BIG WIN */
     .win-modal { background: radial-gradient(circle, #f59e0b, #b45309); border-color: #fff;}
     .win-title { font-size: 35px !important; color: #fff !important; text-shadow: 0 5px 10px rgba(0,0,0,0.5); font-style: italic;}
     .win-amount { font-size: 40px; font-weight: 900; color: #fff; margin: 15px 0; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));}
@@ -116,6 +116,7 @@
       <a href="/" class="btn-back">🔙 LOBI</a>
       <div class="saldo-box">🪙 <span id="n-c">0</span></div>
     </div>
+    
     <div class="screen">
       <div class="game-title">SWEET 1000</div>
       
@@ -127,6 +128,12 @@
       <div class="slot-grid" id="grid">
           <div id="float-coin" class="float-coin">+ 🪙 0</div>
       </div>
+      
+      <div id="spin-win-box" class="spin-win-box">
+          <div class="sw-label">KEMENANGAN SPIN INI</div>
+          <div id="spin-win-val" class="sw-val">🪙 0</div>
+      </div>
+
       <div id="status-msg" class="status-msg">MEMUTAR...</div>
     </div>
 
@@ -151,7 +158,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     let socket;
-    const symbols = ['🍬', '🍇', '🍉', '🍌', '🍎', '🍑']; // Scatter 🍭 dipisah
+    const symbols = ['🍬', '🍇', '🍉', '🍌', '🍎', '🍑']; 
     let pendingBuyType = '';
 
     fetch('/api/me').then(r => r.json()).then(d => { if(!d.loggedIn) window.location.href = '/'; else masuk(d); });
@@ -168,7 +175,6 @@
         return { bg: 'radial-gradient(circle, #3b82f6, #1e3a8a)', border: '#bfdbfe', color: '#fff', icon: '💣' }; 
     }
 
-    // MODAL LOGIC
     function openBuyModal(type) {
         let b = parseInt(document.getElementById('bet-input').value.replace(/\./g, ''));
         if(!b || b < 200) return alert("Minimal Bet Dasar 200 bosku!");
@@ -176,7 +182,7 @@
         let cost = type === 'super' ? b * 500 : b * 100;
         let title = type === 'super' ? 'SUPER BUY x500' : 'BUY SPIN x100';
         document.getElementById('buy-title').innerText = title;
-        document.getElementById('buy-desc').innerText = `Anda akan membeli fitur seharga 🪙 ${cost.toLocaleString('id-ID')}. Lanjutkan?`;
+        document.getElementById('buy-desc').innerText = `Beli fitur seharga 🪙 ${cost.toLocaleString('id-ID')}?`;
         document.getElementById('buy-modal').style.display = 'flex';
     }
     function closeModal() { document.getElementById('buy-modal').style.display = 'none'; }
@@ -210,7 +216,6 @@
       socket.on('slot_freespin_start', async (data) => {
           document.getElementById('gc').style.background = 'radial-gradient(circle at top, #7e22ce 0%, #4a044e 100%)'; 
           
-          // SCATTER ANIMATION (Murni atau Beli)
           if(data.isMurni) {
               document.getElementById('status-msg').innerText = '🍭 SCATTER DIDAPATKAN!';
               dropScatters();
@@ -226,43 +231,39 @@
               for(let i=0; i<15; i++) {
                   document.getElementById('status-msg').innerText = `💥 FREESPIN: ${15 - i} TERSISA`;
                   let currentData = spinArray[i];
-                  
-                  // Tunggu proses Tumble per putaran beres
                   await new Promise(resolve => executeTumble(currentData, true, resolve));
               }
-              // SELESAI 15 RONDE
               setTimeout(() => {
                   document.getElementById('n-c').innerText = data.finalCoin.toLocaleString('id-ID');
-                  showWinModal(data.finalWin); // POPUP BIG WIN!
+                  showWinModal(data.finalWin); 
               }, 1000);
           };
           runSpins();
       });
     }
 
-    // ANIMASI 4 SCATTER TURUN BUAT FREESPIN MURNI
     function dropScatters() {
         for(let i=0; i<20; i++) {
             let cell = document.getElementById(`c-${i}`);
             cell.innerHTML = `<div class="simbol-item drop">${symbols[Math.floor(Math.random() * symbols.length)]}</div>`;
         }
-        // Paksa taruh 4 scatter
         let sIdx = [2, 7, 12, 17];
         sIdx.forEach(idx => {
             document.getElementById(`c-${idx}`).innerHTML = `<div class="simbol-item drop scatter-icon">🍭</div>`;
         });
     }
 
-    // ==========================================
-    // LOGIKA TUMBLE (RUNTUHAN) SUPER KEREN
-    // ==========================================
     function executeTumble(data, isFreespin, callback) {
         let winSym = data.symbol; 
         let winAmt = data.winAmount || data.win; 
         let dropMulti = data.multi;
         let tumbles = data.tumbles || 0; 
         
-        // Tahap 1: Turunin simbol awal dari langit
+        // Reset Kemenangan Sementara (Spin Win)
+        let spinWinAcc = 0;
+        document.getElementById('spin-win-box').style.display = 'none';
+        document.getElementById('spin-win-val').style.color = '#10b981';
+
         for(let i=0; i<20; i++) { 
             let cell = document.getElementById(`c-${i}`); 
             cell.innerHTML = `<div class="simbol-item drop">${symbols[Math.floor(Math.random() * symbols.length)]}</div>`; 
@@ -270,37 +271,39 @@
         document.getElementById('float-coin').classList.remove('show');
 
         if (winAmt === 0) {
-            // Kalau Zonk, udahan
             setTimeout(callback, 800);
             return;
         }
 
         let currentTumble = 0;
-        let totalWinRondeIni = winAmt; 
-        let winPerTumble = Math.floor(winAmt / tumbles); // Dibagi biar ada angkanya naik pelan2
+        let winPerTumble = Math.floor(winAmt / tumbles); 
 
         const runTumble = () => {
             if (currentTumble >= tumbles) {
-                // Tumble Selesai, Waktunya Nurunin Petir
                 if (isFreespin && dropMulti > 0) {
                     setTimeout(() => {
                         let pIdx = Math.floor(Math.random() * 20); 
                         let style = getMultiColor(dropMulti);
                         document.getElementById(`c-${pIdx}`).innerHTML = `<div class="bom-multi" style="background:${style.bg}; border-color:${style.border}; color:${style.color};">${style.icon}<span style="font-size:12px">x${dropMulti}</span></div>`;
                         
-                        if (dropMulti >= 100) { // EFEK DEWA KILAT GETAR
+                        if (dropMulti >= 100) { 
                             document.getElementById('gc').classList.add('shake-mode'); 
                             document.getElementById('flash').classList.add('active');
                             setTimeout(() => { document.getElementById('gc').classList.remove('shake-mode'); document.getElementById('flash').classList.remove('active'); }, 600);
                         }
 
-                        // Update Text Multiplier (Sweet = Non akumulasi global)
                         let tmVal = parseInt(document.getElementById('tm-val').innerText.replace('x','')) + dropMulti;
                         document.getElementById('tm-val').innerText = 'x' + tmVal;
                         document.getElementById('tm-box').style.transform = 'scale(1.2)';
                         setTimeout(()=> document.getElementById('tm-box').style.transform = 'scale(1)', 200);
                         
-                        setTimeout(callback, 1000); // Lanjut next spin
+                        // UPDATE KEMENANGAN SEMENTARA DIKALI BOM
+                        setTimeout(() => {
+                            let totalWithMulti = spinWinAcc * dropMulti;
+                            document.getElementById('spin-win-val').innerText = '🪙 ' + totalWithMulti.toLocaleString('id-ID') + ' (x' + dropMulti + ')';
+                            document.getElementById('spin-win-val').style.color = '#fde047'; // Berubah jadi emas karena dikali bom!
+                            setTimeout(callback, 1500); 
+                        }, 500);
                     }, 500);
                 } else {
                     setTimeout(callback, 500);
@@ -309,11 +312,9 @@
             }
 
             setTimeout(() => {
-                // Pilih 6-8 kotak random buat pecah
                 let breakIndices = [];
                 while(breakIndices.length < 7) { let r = Math.floor(Math.random() * 20); if(!breakIndices.includes(r)) breakIndices.push(r); }
                 
-                // Animasi Pecah
                 for(let i=0; i<20; i++) {
                     let cell = document.getElementById(`c-${i}`); 
                     if (breakIndices.includes(i)) {
@@ -321,15 +322,18 @@
                     }
                 }
 
-                // Munculin angka terbang
                 setTimeout(() => {
                     let floatC = document.getElementById('float-coin');
                     floatC.innerText = `+ 🪙 ${winPerTumble.toLocaleString('id-ID')}`;
                     floatC.classList.remove('show');
-                    void floatC.offsetWidth; // Trigger reflow buat restart animasi
+                    void floatC.offsetWidth; 
                     floatC.classList.add('show');
                     
-                    // Runtuhin simbol baru buat ngisi yang pecah
+                    // TAMBAH KEMENANGAN SEMENTARA
+                    spinWinAcc += winPerTumble;
+                    document.getElementById('spin-win-box').style.display = 'block';
+                    document.getElementById('spin-win-val').innerText = '🪙 ' + spinWinAcc.toLocaleString('id-ID');
+                    
                     setTimeout(() => {
                         for(let i=0; i<20; i++) {
                             if (breakIndices.includes(i)) {
@@ -337,14 +341,13 @@
                             }
                         }
                         currentTumble++;
-                        runTumble(); // Loop tumble berikutnya
+                        runTumble(); 
                     }, 400);
-                }, 300); // Jeda sebelum angka terbang
-
-            }, 600); // Jeda tiap tumble
+                }, 300); 
+            }, 600); 
         };
 
-        runTumble(); // Mulai chain reaction
+        runTumble(); 
     }
 
     function playSlot(type) {
@@ -352,6 +355,14 @@
         if(!b || b <= 0) return alert("Isi bet bosku!");
         if(type === 'manual' && b < 400) return alert("Spin manual minimal 400 bosku!");
         document.getElementById('bet-panel').classList.add('disabled'); document.getElementById('status-msg').style.display = 'block'; document.getElementById('status-msg').innerText = '🔄 MEMUTAR...'; document.getElementById('status-msg').style.color = '#fff';
+        
+        // Reset animasi sebelum muter
+        document.getElementById('spin-win-box').style.display = 'none';
+        for(let i=0; i<20; i++) { 
+            let cell = document.getElementById(`c-${i}`); 
+            cell.innerHTML = `<div class="simbol-item">${symbols[Math.floor(Math.random() * symbols.length)]}</div>`; 
+        }
+
         socket.emit('play_video_slot', { betAmount: b, spinType: type, gameId: 'sweet' });
     }
   </script>
