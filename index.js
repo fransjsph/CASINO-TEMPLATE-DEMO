@@ -101,10 +101,11 @@ io.on('connection', (socket) => {
                 if (gameId === 'zeus_super' || gameId === 'princess_super') maxwinCap = 50000; // SUPER MAXWIN
 
                 // CEK SUPER SCATTER INSTANT MAXWIN (Untuk Super Games)
-                let isSuperScatterHit = false;
-                if ((gameId === 'zeus_super' || gameId === 'princess_super')) {
-                    if (isTargeted && tData.type === 'maxwin') isSuperScatterHit = true;
-                    else if (Math.random() < 0.00005) isSuperScatterHit = true; // Hoki Dewa 0.005%
+let isSuperScatterHit = false;
+if ((gameId === 'zeus_super' || gameId === 'princess_super')) {
+    if (isTargeted && tData.type === 'maxwin' && tData.superMode === 'instant') isSuperScatterHit = true;
+    else if (Math.random() < 0.00005) isSuperScatterHit = true; // Hoki Dewa 0.005% (Tanpa panel)
+}
                 }
 
                 if (isSuperScatterHit) {
