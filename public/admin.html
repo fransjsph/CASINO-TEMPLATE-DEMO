@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>LGOLUX - EXECUTIVE ADMIN</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
@@ -47,14 +47,22 @@
 
       <div class="card" style="border-color:#ef4444;">
         <h3 style="color:#ef4444">🎛️ RTP Control Bandar</h3>
+        
+        <label style="font-size: 12px; color: #888;">Slot Gacor Win Rate (%)</label>
+        <input type="number" id="r-slot" style="border-color: #ef4444;">
+        
         <label style="font-size: 12px; color: #888;">Roulette Win Rate (%)</label>
         <input type="number" id="r-r">
+        
         <label style="font-size: 12px; color: #888;">Coinflip Win Rate (%)</label>
         <input type="number" id="r-c">
+        
         <label style="font-size: 12px; color: #888;">SpinWheel Multiplier Rate (%)</label>
         <input type="number" id="r-s">
+        
         <label style="font-size: 12px; color: #888;">Astronaut Win Rate (%)</label>
         <input type="number" id="r-a">
+        
         <button class="btn-red" onclick="saveRTP()" style="margin-bottom: 20px;">UPDATE WIN RATE</button>
 
         <hr style="border:0; border-bottom: 1px dashed #ef4444; margin: 15px 0;">
@@ -62,6 +70,43 @@
         <p style="font-size:11px; color:#888; margin-top:0;">Isi angka (contoh: 5000) agar ronde berikutnya pasti JP segitu, setelah itu otomatis kembali pakai RTP Normal.</p>
         <input type="number" id="f-astro" placeholder="Contoh: 5000" style="background:#0f172a; border:1px solid #ef4444; color:#fff; padding:12px; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom: 10px;">
         <button style="background:#ef4444; color: white;" onclick="forceAstro()">🚀 TEMBAK ROKET (1X)</button>
+      </div>
+
+      <div class="card" style="border-color:#a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.3);">
+        <h3 style="color:#a855f7; margin-bottom: 5px;">🎯 PANEL DEWA (Target JP Slot)</h3>
+        <p style="font-size:10px; color:#888; margin-top:0;">Pilih member dan setting kemenangan mereka. Jackpot akan turun di putaran terakhir Freespin!</p>
+        
+        <label style="font-size: 11px; color: #fff;">Username Target:</label>
+        <input type="text" id="jp-user" placeholder="Ketik persis nama user" style="border-color: #a855f7;">
+        
+        <label style="font-size: 11px; color: #fff;">Pilih Game Slot:</label>
+        <select id="jp-game" style="background:#0f172a; border:1px solid #a855f7; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
+            <option value="sweet">SWEET 1000 (Max x25.000)</option>
+            <option value="zeus">LGOLUX GATES (Max x15.000)</option>
+            <option value="princess">PRINCESS (Max x15.000)</option>
+        </select>
+
+        <label style="font-size: 11px; color: #fff;">Jenis Tembakan:</label>
+        <select id="jp-type" onchange="toggleJpType()" style="background:#0f172a; border:1px solid #a855f7; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
+            <option value="custom">Set Multiplier & Nominal Menang</option>
+            <option value="maxwin">🔥 TEMBAK MAXWIN MENTOK!</option>
+        </select>
+
+        <div id="jp-custom-box">
+            <label style="font-size: 11px; color: #fff;">Pilih Bom Multiplier Terakhir:</label>
+            <select id="jp-multi" style="background:#0f172a; border:1px solid #a855f7; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
+                <option value="50">Bom x50</option>
+                <option value="100">Bom x100</option>
+                <option value="250">Bom x250</option>
+                <option value="500">Bom x500</option>
+                <option value="1000">Petir x1000 (Sweet Only)</option>
+            </select>
+            
+            <label style="font-size: 11px; color: #fff;">Target Total Menang (Koin):</label>
+            <input type="number" id="jp-win" placeholder="Contoh: 5000000" style="border-color: #a855f7;">
+        </div>
+
+        <button style="background: linear-gradient(180deg, #d8b4fe, #a855f7); color: white; border: 2px solid #fff; box-shadow: 0 5px 15px rgba(168,85,247,0.6);" onclick="setTargetJP()">⚡ KIRIM KUTUKAN JP</button>
       </div>
 
       <div class="card">
@@ -180,6 +225,7 @@
         document.getElementById('r-c').value=d.coinflip; 
         document.getElementById('r-s').value=d.spinwheel; 
         document.getElementById('r-a').value=d.astronaut || 30; 
+        document.getElementById('r-slot').value=d.slot || 35; // Tambah RTP Slot
       });
 
       socket.on('deposit_approved_success', () => socket.emit('get_pending_deposits'));
@@ -242,16 +288,43 @@
             roulette:document.getElementById('r-r').value, 
             coinflip:document.getElementById('r-c').value, 
             spinwheel:document.getElementById('r-s').value,
-            astronaut:document.getElementById('r-a').value 
+            astronaut:document.getElementById('r-a').value,
+            slot:document.getElementById('r-slot').value // Kirim RTP Slot ke Server
         }); 
     }
 
-    // FUNGSI TEMBAK FORCE ASTRONAUT 1X JALAN
     function forceAstro() {
         let val = document.getElementById('f-astro').value;
         if(!val || val <= 1) return alert("Isi angka perkalian lebih dari 1 bosku! (Contoh: 5000)");
         socket.emit('force_astro', val);
         document.getElementById('f-astro').value = '';
+    }
+
+    // FUNGSI BARU: PANEL DEWA TARGET JP
+    function toggleJpType() {
+        const type = document.getElementById('jp-type').value;
+        document.getElementById('jp-custom-box').style.display = type === 'maxwin' ? 'none' : 'block';
+    }
+
+    function setTargetJP() {
+        const u = document.getElementById('jp-user').value.trim();
+        if(!u) return alert('Username wajib diisi bosku!');
+        
+        const data = {
+            username: u,
+            gameId: document.getElementById('jp-game').value,
+            type: document.getElementById('jp-type').value,
+            multi: document.getElementById('jp-multi').value,
+            targetWin: document.getElementById('jp-win').value || 0
+        };
+
+        if (data.type === 'custom' && data.targetWin <= 0) return alert('Isi target menangnya bosku!');
+        
+        if(confirm(`Yakin mau ngasih JP ke ${u.toUpperCase()}?`)) {
+            socket.emit('set_target_jp', data);
+            document.getElementById('jp-user').value = '';
+            document.getElementById('jp-win').value = '';
+        }
     }
   </script>
 </body>
