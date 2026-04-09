@@ -9,19 +9,35 @@
     :root { --gold: #f59e0b; --bg: #831843; --panel: #4c0519; --super: #c084fc; }
     body { margin: 0; background: #000; color: white; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; display: flex; justify-content: center;}
     .game-container { width: 100%; max-width: 420px; height: 100dvh; display: flex; flex-direction: column; background: radial-gradient(circle at top, #be185d 0%, var(--bg) 100%); position: relative; overflow: hidden;}
+    
+    .flash-screen { position: absolute; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 99;}
+    .flash-screen.active { animation: flashWhite 0.5s ease-out; }
+    @keyframes flashWhite { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+    @keyframes earthquake { 0%, 100% { transform: translate(0, 0) rotate(0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-8px, 8px) rotate(-1deg); } 20%, 40%, 60%, 80% { transform: translate(8px, -8px) rotate(1deg); } }
+    .shake-mode { animation: earthquake 0.6s ease-out; }
+
     .top-bar { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%); position: absolute; top: 0; left: 0; right: 0; z-index: 10; padding-top: calc(15px + env(safe-area-inset-top, 0px)); }
     .btn-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 12px;}
     .saldo-box { background: rgba(0,0,0,0.8); border: 1px solid var(--gold); padding: 8px 18px; border-radius: 10px; font-weight: 800; color: var(--gold);}
     .screen { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 40px; position: relative;}
     .game-title { font-size: 32px; font-weight: 900; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8), 0 0 10px #f43f5e; margin-bottom: 10px; font-style: italic;}
     
-    .slot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 15px; border: 3px solid #9f1239; width: 92%; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);}
+    .slot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 15px; border: 3px solid #9f1239; width: 92%; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); position: relative;}
     .slot-cell { aspect-ratio: 1; background: #4c0519; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 35px; position: relative; overflow: hidden;}
-    .slot-cell.spin { animation: blurSpin 0.1s infinite; }
-    @keyframes blurSpin { 0% { filter: blur(2px); transform: translateY(-5px); } 100% { filter: blur(0px); transform: translateY(5px); } }
+    
+    .slot-cell.spin { animation: fastChange 0.1s infinite; filter: blur(1px); opacity: 0.8; }
+    @keyframes fastChange { 0% { transform: scale(0.95); } 100% { transform: scale(1.05); } }
 
-    .bom-multi { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 22px; font-weight: 900; text-shadow: 0 2px 5px rgba(0,0,0,0.8); z-index: 5; animation: dropBom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius: 8px; border: 2px solid;}
-    @keyframes dropBom { 0% { transform: scale(3) rotate(45deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+    .slot-cell.break { animation: popBreak 0.5s forwards; }
+    @keyframes popBreak { 50% { transform: scale(1.5); filter: brightness(2); } 100% { transform: scale(0); opacity: 0; } }
+
+    .float-coin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; font-weight: 900; color: #10b981; text-shadow: 0 2px 5px black, 0 0 10px white; z-index: 20; opacity: 0; pointer-events: none; width: 100%; text-align: center;}
+    .float-coin.show { animation: floatUp 1.5s ease-out forwards; }
+    @keyframes floatUp { 0% { transform: translate(-50%, -30%); opacity: 1; } 100% { transform: translate(-50%, -100px); opacity: 0; } }
+
+    .bom-multi { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 22px; font-weight: 900; text-shadow: 0 2px 5px rgba(0,0,0,0.8); z-index: 5; animation: dropFromSky 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius: 8px; border: 2px solid;}
+    @keyframes dropFromSky { 0% { transform: translateY(-100px) scale(2); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
 
     .status-msg { font-size: 14px; font-weight: 900; color: #fff; z-index: 10; margin-top: 10px; background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 30px; text-align: center; border: 1px solid #f43f5e; display: none;}
     .panel { background: var(--panel); padding: 15px; border-top: 3px solid #f43f5e; z-index: 10; border-radius: 25px 25px 0 0; padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));}
@@ -43,13 +59,16 @@
 </head>
 <body>
   <div class="game-container" id="gc">
+    <div id="flash" class="flash-screen"></div>
     <div class="top-bar">
       <a href="/" class="btn-back">🔙 LOBI</a>
       <div class="saldo-box">🪙 <span id="n-c">0</span></div>
     </div>
     <div class="screen">
       <div class="game-title">SWEET 1000</div>
-      <div class="slot-grid" id="grid"></div>
+      <div class="slot-grid" id="grid">
+          <div id="float-coin" class="float-coin">+ 🪙 0</div>
+      </div>
       <div id="status-msg" class="status-msg">MEMUTAR...</div>
     </div>
     <div class="panel" id="bet-panel">
@@ -73,15 +92,13 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     let socket;
-    const symbols = ['🍬', '🍇', '🍉', '🍌', '🍎', '🍑', '🍭']; 
+    const symbols = ['🍭', '🍬', '🍇', '🍉', '🍌']; 
     fetch('/api/me').then(r => r.json()).then(d => { if(!d.loggedIn) window.location.href = '/'; else masuk(d); });
     function formatRupiah(obj) { let val = obj.value.replace(/[^0-9]/g, ''); obj.value = val ? parseInt(val).toLocaleString('id-ID') : ''; }
     function calcBuySpin() { let b = parseInt(document.getElementById('bet-input').value.replace(/\./g, '')) || 0; document.getElementById('buy-cost').innerText = '🪙 ' + (b * 100).toLocaleString('id-ID'); document.getElementById('super-cost').innerText = '🪙 ' + (b * 500).toLocaleString('id-ID'); }
-    
-    function initGrid() { const grid = document.getElementById('grid'); grid.innerHTML = ''; for(let i=0; i<20; i++) grid.innerHTML += `<div class="slot-cell" id="c-${i}">?</div>`; }
+    function initGrid() { const grid = document.getElementById('grid'); grid.innerHTML = '<div id="float-coin" class="float-coin">+ 🪙 0</div>'; for(let i=0; i<20; i++) grid.innerHTML += `<div class="slot-cell" id="c-${i}">?</div>`; }
     initGrid(); calcBuySpin();
 
-    // KASTA WARNA MULTIPLIER
     function getMultiColor(val) {
         if(val >= 1000) return { bg: 'radial-gradient(circle, #3b0764, #000)', border: '#d8b4fe', color: '#fff', icon: '💣' }; 
         if(val >= 250) return { bg: 'radial-gradient(circle, #ef4444, #7f1d1d)', border: '#fca5a5', color: '#fff', icon: '💣' };
@@ -95,7 +112,8 @@
       socket = io();
       socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID'));
       socket.on('game_result', r => { if(r.status === 'error') { alert(r.msg); document.getElementById('bet-panel').classList.remove('disabled'); document.getElementById('status-msg').style.display = 'none'; } });
-      socket.on('slot_normal_result', (data) => stopGridAnimation(false, null, data));
+      
+      socket.on('slot_normal_result', (data) => stopGridAnimation(false, data));
 
       socket.on('slot_freespin_start', (data) => {
           document.getElementById('gc').style.background = 'radial-gradient(circle at top, #7e22ce 0%, #4a044e 100%)'; 
@@ -108,33 +126,64 @@
                       document.getElementById('status-msg').style.color = '#fde047';
                       document.getElementById('n-c').innerText = data.finalCoin.toLocaleString('id-ID');
                       setTimeout(() => { document.getElementById('bet-panel').classList.remove('disabled'); document.getElementById('status-msg').style.display = 'none'; document.getElementById('gc').style.background = 'radial-gradient(circle at top, #be185d 0%, var(--bg) 100%)'; }, 4000);
-                  }, 1500); return;
+                  }, 2500); return;
               }
               let currentData = spinArray[currentSpinIdx];
               document.getElementById('status-msg').innerText = `💥 FREESPIN: ${15 - currentSpinIdx} TERSISA`;
               startGridAnimation();
-              setTimeout(() => stopGridAnimation(true, currentData.multi), 600); 
+              setTimeout(() => stopGridAnimation(true, currentData), 600); 
               currentSpinIdx++;
-          }, 2000); 
+          }, 3000); 
       });
     }
 
-    function startGridAnimation() { for(let i=0; i<20; i++) { let cell = document.getElementById(`c-${i}`); cell.innerHTML = symbols[Math.floor(Math.random() * symbols.length)]; cell.classList.add('spin'); } }
+    function startGridAnimation() { 
+        for(let i=0; i<20; i++) { 
+            let cell = document.getElementById(`c-${i}`); 
+            cell.classList.remove('break'); 
+            cell.innerHTML = symbols[Math.floor(Math.random() * symbols.length)]; 
+            cell.classList.add('spin'); 
+        } 
+        document.getElementById('float-coin').classList.remove('show');
+    }
 
-    function stopGridAnimation(isFreespin, dropMulti = null, normalData = null) {
+    function stopGridAnimation(isFreespin, data) {
+        let winSym = data.symbol; let winAmt = data.winAmount || data.win; let dropMulti = data.multi;
+        let breakIndices = [];
+        if (winSym && winAmt > 0) { while(breakIndices.length < 8) { let r = Math.floor(Math.random() * 20); if(!breakIndices.includes(r)) breakIndices.push(r); } }
+
         for(let i=0; i<20; i++) {
-            let cell = document.getElementById(`c-${i}`); cell.classList.remove('spin'); cell.innerHTML = symbols[Math.floor(Math.random() * symbols.length)];
-            // Munculin Bom Sweet
-            if (isFreespin && dropMulti > 0 && Math.random() < 0.15) { 
+            let cell = document.getElementById(`c-${i}`); cell.classList.remove('spin'); 
+            if (breakIndices.includes(i)) { cell.innerHTML = winSym; setTimeout(() => cell.classList.add('break'), 300);
+            } else { cell.innerHTML = symbols[Math.floor(Math.random() * symbols.length)]; }
+        }
+
+        if (winAmt > 0) {
+            setTimeout(() => {
+                let floatC = document.getElementById('float-coin');
+                floatC.innerText = `+ 🪙 ${winAmt.toLocaleString('id-ID')}`;
+                if (isFreespin && dropMulti > 0) { floatC.innerText += ` (x${dropMulti})`; } // Di Sweet, Multiplier cuma buat spin saat itu
+                floatC.classList.add('show');
+            }, 500);
+        }
+
+        if (isFreespin && dropMulti > 0 && Math.random() < 0.5) { 
+            setTimeout(() => {
+                let pIdx = Math.floor(Math.random() * 20); let cell = document.getElementById(`c-${pIdx}`);
                 let style = getMultiColor(dropMulti);
                 cell.innerHTML = `<div class="bom-multi" style="background:${style.bg}; border-color:${style.border}; color:${style.color};">${style.icon}<span style="font-size:12px">x${dropMulti}</span></div>`;
-            }
+                if (dropMulti >= 100) {
+                    document.getElementById('gc').classList.add('shake-mode'); document.getElementById('flash').classList.add('active');
+                    setTimeout(() => { document.getElementById('gc').classList.remove('shake-mode'); document.getElementById('flash').classList.remove('active'); }, 600);
+                }
+            }, winAmt > 0 ? 1000 : 100); 
         }
-        if (!isFreespin && normalData) {
+
+        if (!isFreespin) {
             let msgBox = document.getElementById('status-msg');
-            msgBox.innerText = normalData.status === 'win' ? `🎉 MENANG: 🪙 ${normalData.winAmount.toLocaleString('id-ID')}` : `💀 ZONK`;
-            msgBox.style.color = normalData.status === 'win' ? '#10b981' : '#f43f5e';
-            setTimeout(() => { document.getElementById('bet-panel').classList.remove('disabled'); msgBox.style.display = 'none'; }, 1500);
+            msgBox.innerText = data.status === 'win' ? `🎉 MENANG: 🪙 ${winAmt.toLocaleString('id-ID')}` : `💀 ZONK`;
+            msgBox.style.color = data.status === 'win' ? '#10b981' : '#f43f5e';
+            setTimeout(() => { document.getElementById('bet-panel').classList.remove('disabled'); msgBox.style.display = 'none'; }, 2000);
         }
     }
 
