@@ -2,56 +2,59 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LGOLUX - Casino Lobby</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>LGOLUX - Premium Casino</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
   <style>
-    :root { --bg: #0a0a0a; --surface: #141414; --gold: #d4af37; --text: #fff; --border: rgba(255,255,255,0.08); }
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; min-height: 100vh; }
-    .app { width: 100%; max-width: 420px; background: var(--surface); display: flex; flex-direction: column; position: relative; }
+    :root { --gold: #d4af37; --bg: #0f172a; }
+    body { margin: 0; background: #000; color: white; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; display: flex; justify-content: center; min-height: 100vh;}
+    .app { width: 100%; max-width: 420px; background: var(--bg); display: flex; flex-direction: column; position: relative; overflow-y: auto;}
     .hidden { display: none !important; }
     
     .auth { padding: 40px; text-align: center; height: 100vh; display: flex; flex-direction: column; justify-content: center; }
-    input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--border); background: #000; color: #fff; box-sizing: border-box; font-weight:bold; }
+    input { width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #000; color: #fff; box-sizing: border-box; font-weight:bold; }
     .btn-main { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: 800; background: var(--gold); color: #000; cursor: pointer; text-transform: uppercase; }
 
-    .top { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); position: sticky; top:0; z-index: 10;}
+    .top { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); position: sticky; top:0; z-index: 10;}
     .content { padding: 20px; flex: 1; padding-bottom: 100px; }
-    .wallet { background: linear-gradient(135deg, #1f1c14, #141414); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(212,175,55,0.2); margin-bottom: 20px; }
+    .wallet { background: linear-gradient(135deg, #1f1c14, #141414); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(212,175,55,0.2); margin-bottom: 25px; }
     .balance { font-size: 36px; font-weight: 800; color: var(--gold); }
     
-    /* DESAIN LOBI GAME PREMIUM */
-    .grid { display: flex; flex-direction: column; gap: 15px; }
-    .card { background: #1f1f1f; border-radius: 15px; border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: 0.2s; display: flex; align-items: center; padding: 15px;}
-    .card:active { transform: scale(0.98); border-color: var(--gold);}
-    .c-icon { font-size: 40px; margin-right: 15px; width: 60px; text-align: center;}
-    .c-info h3 { margin: 0 0 5px 0; font-size: 16px; color: var(--gold); text-transform: uppercase;}
-    .c-info p { margin: 0; font-size: 12px; color: #888;}
+    .provider-title { font-size: 14px; font-weight: 900; color: #fff; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;}
+    .provider-title span { background: var(--gold); color: black; padding: 2px 6px; border-radius: 5px; font-size: 10px;}
     
-    .nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 380px; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(15px); display: flex; justify-content: space-around; padding: 15px 0; border-radius: 30px; border: 1px solid rgba(212,175,55,0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.8); z-index: 50; }
-    .nav-item { font-size: 11px; text-align: center; color: #888; cursor: pointer; font-weight: bold;}
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+    .card { border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; cursor: pointer; transition: 0.2s; padding: 15px; display: flex; flex-direction: column; align-items: center; text-align: center; position: relative;}
+    .card:active { transform: scale(0.95); }
+    .c-icon { font-size: 40px; margin-bottom: 10px; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));}
+    .c-info h3 { margin: 0 0 5px 0; font-size: 13px; font-weight: 900; text-transform: uppercase;}
+    .c-info p { margin: 0; font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 600;}
+    
+    /* BADGE KHUSUS */
+    .badge-hot { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 9px; font-weight: 900; padding: 3px 8px; border-radius: 10px; border: 2px solid #000; box-shadow: 0 0 10px #ef4444; transform: rotate(10deg);}
+
+    .nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 380px; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(15px); display: flex; justify-content: space-around; padding: 15px 0; border-radius: 30px; border: 1px solid rgba(212,175,55,0.3); z-index: 50; }
+    .nav-item { font-size: 11px; color: #888; cursor: pointer; font-weight: bold;}
     
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: flex-end; }
-    .modal-box { width: 100%; background: var(--surface); padding: 30px; border-radius: 25px 25px 0 0; border-top: 2px solid var(--gold); animation: up 0.3s; box-sizing: border-box;}
-    @keyframes up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-box { width: 100%; background: #141414; padding: 30px; border-radius: 25px 25px 0 0; border-top: 2px solid var(--gold); box-sizing: border-box;}
   </style>
 </head>
 <body>
   <div class="app">
     <div id="auth-v" class="auth">
       <h1 style="color:var(--gold)">👑 LGOLUX</h1>
-      <p style="color:#888; font-size:12px; margin-bottom: 30px;">Premium Casino Lobby</p>
       <div id="f-login">
         <input id="l-u" placeholder="Username">
         <input id="l-p" type="password" placeholder="Password">
-        <button class="btn-main" onclick="login()">MASUK LOBI</button>
-        <p style="font-size:12px; color:var(--gold); cursor:pointer;" onclick="toggleA()">Daftar Member Baru</p>
+        <button class="btn-main" onclick="login()">MASUK</button>
+        <p style="font-size:12px; color:var(--gold); cursor:pointer; margin-top:20px;" onclick="toggleA()">Daftar Member Baru</p>
       </div>
       <div id="f-reg" class="hidden">
         <input id="r-u" placeholder="Username Baru">
         <input id="r-p" type="password" placeholder="Password Baru">
-        <button class="btn-main" onclick="reg()">DAFTAR VIP</button>
-        <p style="font-size:12px; color:var(--gold); cursor:pointer;" onclick="toggleA()">Sudah ada akun? Login</p>
+        <button class="btn-main" onclick="reg()">DAFTAR</button>
+        <p style="font-size:12px; color:var(--gold); cursor:pointer; margin-top:20px;" onclick="toggleA()">Sudah ada akun? Login</p>
       </div>
     </div>
 
@@ -66,33 +69,47 @@
           <div class="balance">🪙 <span id="n-c">0</span></div>
         </div>
         
-        <h4 style="color:#888; margin-bottom:10px;">🔥 HOT GAMES</h4>
+        <h4 class="provider-title"><span>PROVIDER</span> PLAY LGOLUX</h4>
+        <div class="grid">
+          <div class="card" onclick="window.location.href='/sweet'" style="grid-column: 1/-1; background: linear-gradient(135deg, #be185d, #831843); border-color:#f43f5e;">
+            <div class="badge-hot">MAXWIN x25.000</div>
+            <div class="c-icon" style="font-size:50px;">🍬</div>
+            <div class="c-info"><h3 style="color:#fda4af;">SWEET 1000</h3><p>Super Buy (x500) Aktif! Bom x1000</p></div>
+          </div>
+          <div class="card" onclick="window.location.href='/zeus'" style="background: linear-gradient(135deg, #b45309, #78350f); border-color:#fbbf24;">
+            <div class="c-icon">⚡</div>
+            <div class="c-info"><h3 style="color:#fde047;">LGOLUX GATES</h3><p>Kakek Petir Akumulasi</p></div>
+          </div>
+          <div class="card" onclick="window.location.href='/princess'" style="background: linear-gradient(135deg, #a21caf, #581c87); border-color:#e879f9;">
+            <div class="c-icon">👸</div>
+            <div class="c-info"><h3 style="color:#f5d0fe;">PRINCESS</h3><p>Peri Bintang x500</p></div>
+          </div>
+        </div>
+
+        <h4 class="provider-title"><span>PROVIDER</span> LGOLUX CASINO</h4>
         <div class="grid">
           <div class="card" onclick="window.location.href='/spaceman'" style="background: linear-gradient(135deg, #1e3a8a, #0f172a); border-color:#3b82f6;">
-            <div class="c-icon">👨‍🚀</div>
-            <div class="c-info"><h3 style="color:#60a5fa;">SPACEMAN (Crash)</h3><p style="color:#93c5fd;">Tarik sebelum meledak! Max x5000</p></div>
+            <div class="c-icon">🚀</div>
+            <div class="c-info"><h3 style="color:#60a5fa;">SPACEMAN</h3><p>Crash x5000</p></div>
           </div>
           <div class="card" onclick="window.location.href='/baccarat'" style="background: linear-gradient(135deg, #064e3b, #022c22); border-color:#10b981;">
             <div class="c-icon">🃏</div>
-            <div class="c-info"><h3 style="color:#34d399;">BACCARAT VIP</h3><p style="color:#6ee7b7;">Player vs Banker Casino Live</p></div>
+            <div class="c-info"><h3 style="color:#34d399;">BACCARAT</h3><p>Live Casino VIP</p></div>
           </div>
-          <div class="card" onclick="window.location.href='/roulette'">
-            <div class="c-icon">🎰</div>
-            <div class="c-info"><h3>Roulette</h3><p>Tebak Merah atau Hitam (x2)</p></div>
+          <div class="card" onclick="window.location.href='/roulette'" style="background: #1f2937;">
+            <div class="c-icon">🎰</div><div class="c-info"><h3>Roulette</h3></div>
           </div>
-          <div class="card" onclick="window.location.href='/coinflip'">
-            <div class="c-icon">🪙</div>
-            <div class="c-info"><h3>Coin Flip</h3><p>Angka atau Gambar (x1.9)</p></div>
+          <div class="card" onclick="window.location.href='/coinflip'" style="background: #1f2937;">
+            <div class="c-icon">🪙</div><div class="c-info"><h3>Coin Flip</h3></div>
           </div>
-          <div class="card" onclick="window.location.href='/spinwheel'">
-            <div class="c-icon">🎡</div>
-            <div class="c-info"><h3>Spin Wheel</h3><p>Roda Gila Multiplier Vegas</p></div>
+          <div class="card" onclick="window.location.href='/spinwheel'" style="grid-column: 1/-1; background: #1f2937;">
+            <div class="c-icon">🎡</div><div class="c-info"><h3>Spin Wheel</h3></div>
           </div>
         </div>
       </div>
       
       <div class="nav">
-        <div class="nav-item active">🏠 LOBI</div>
+        <div class="nav-item" style="color:var(--gold)">🏠 LOBI</div>
         <div class="nav-item" onclick="openM('m-depo')">💳 DEPOSIT</div>
         <div class="nav-item" onclick="openM('m-wd')">💸 WD</div>
         <div class="nav-item" onclick="showH()">📜 RIWAYAT</div>
@@ -100,8 +117,8 @@
     </div>
   </div>
 
-  <div id="m-depo" class="modal hidden"><div class="modal-box"><h3>💳 Deposit</h3><input id="d-a" type="text" placeholder="Nominal" oninput="formatRupiah(this)"><button class="btn-main" onclick="doD()">KIRIM REQUEST</button><button onclick="closeM('m-depo')" style="width:100%; background:none; color:#888; border:none; margin-top:10px">TUTUP</button></div></div>
-  <div id="m-wd" class="modal hidden"><div class="modal-box"><h3>💸 Tarik Koin</h3><input id="w-a" type="text" placeholder="Nominal" oninput="formatRupiah(this)"><button class="btn-main" onclick="doW()">AJUKAN WD</button><button onclick="closeM('m-wd')" style="width:100%; background:none; color:#888; border:none; margin-top:10px">TUTUP</button></div></div>
+  <div id="m-depo" class="modal hidden"><div class="modal-box"><h3>💳 Deposit</h3><input id="d-a" type="text" placeholder="Nominal" oninput="formatRupiah(this)"><button class="btn-main" onclick="doD()">KIRIM</button><button onclick="closeM('m-depo')" style="width:100%; background:none; color:#888; border:none; margin-top:10px">BATAL</button></div></div>
+  <div id="m-wd" class="modal hidden"><div class="modal-box"><h3>💸 Tarik Koin</h3><input id="w-a" type="text" placeholder="Nominal" oninput="formatRupiah(this)"><button class="btn-main" onclick="doW()">TARIK</button><button onclick="closeM('m-wd')" style="width:100%; background:none; color:#888; border:none; margin-top:10px">BATAL</button></div></div>
   <div id="m-hist" class="modal hidden"><div class="modal-box" style="height:80vh; overflow-y:auto"><h3>📜 Histori Transaksi</h3><div id="h-list" style="font-size:12px"></div><button class="btn-main" onclick="closeM('m-hist')" style="margin-top:20px">TUTUP</button></div></div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -113,40 +130,18 @@
     function openM(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeM(id) { document.getElementById(id).classList.add('hidden'); }
 
-    async function login() {
-      const u = document.getElementById('l-u').value.trim(), p = document.getElementById('l-p').value.trim();
-      const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) });
-      const d = await res.json(); if(d.success) location.reload(); else alert(d.msg);
-    }
-    async function reg() {
-      const u = document.getElementById('r-u').value.trim(), p = document.getElementById('r-p').value.trim();
-      const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) });
-      const d = await res.json(); alert(d.msg); if(d.success) toggleA();
-    }
+    async function login() { const u = document.getElementById('l-u').value.trim(), p = document.getElementById('l-p').value.trim(); const res = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) }); const d = await res.json(); if(d.success) location.reload(); else alert(d.msg); }
+    async function reg() { const u = document.getElementById('r-u').value.trim(), p = document.getElementById('r-p').value.trim(); const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) }); const d = await res.json(); alert(d.msg); if(d.success) toggleA(); }
     async function logout() { await fetch('/api/logout',{method:'POST'}); location.reload(); }
 
     function masuk(d) {
-      document.getElementById('auth-v').classList.add('hidden');
-      document.getElementById('main-v').classList.remove('hidden');
-      document.getElementById('n-u').innerText = d.username.toUpperCase();
-      document.getElementById('n-c').innerText = d.coin.toLocaleString('id-ID');
-      socket = io();
-      socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID'));
-      socket.on('notif_msg', m => alert(m));
+      document.getElementById('auth-v').classList.add('hidden'); document.getElementById('main-v').classList.remove('hidden'); document.getElementById('n-u').innerText = d.username.toUpperCase(); document.getElementById('n-c').innerText = d.coin.toLocaleString('id-ID');
+      socket = io(); socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID')); socket.on('notif_msg', m => alert(m));
     }
 
-    function doD() { const a = parseInt(document.getElementById('d-a').value.replace(/\./g, '')); if(!a) return; socket.emit('req_deposit', a); closeM('m-depo'); document.getElementById('d-a').value=''; }
-    function doW() { const a = parseInt(document.getElementById('w-a').value.replace(/\./g, '')); if(!a) return; socket.emit('req_wd', a); closeM('m-wd'); document.getElementById('w-a').value=''; }
-    async function showH() {
-      const r = await fetch('/api/history'); const d = await r.json();
-      let h = ''; 
-      d.forEach(x => { 
-        let c = x.status == 'SUCCESS' ? '#10b981' : (x.status == 'REJECTED' ? '#ef4444' : '#f59e0b');
-        let n = x.note ? `<br><small style="color:#aaa;">📝 Ket: ${x.note}</small>` : '';
-        h += `<div style="border-bottom:1px solid #333; padding:10px 0;"><b style="color:var(--gold)">${x.type}</b> | 🪙 ${x.amount.toLocaleString('id-ID')} | <span style="color:${c}; font-weight:bold;">${x.status}</span><br><small>${x.date}</small>${n}</div>`; 
-      });
-      document.getElementById('h-list').innerHTML = h || 'Belum ada transaksi'; openM('m-hist');
-    }
+    function doD() { const a = parseInt(document.getElementById('d-a').value.replace(/\./g, '')); if(a) { socket.emit('req_deposit', a); closeM('m-depo'); document.getElementById('d-a').value=''; } }
+    function doW() { const a = parseInt(document.getElementById('w-a').value.replace(/\./g, '')); if(a) { socket.emit('req_wd', a); closeM('m-wd'); document.getElementById('w-a').value=''; } }
+    async function showH() { const r = await fetch('/api/history'); const d = await r.json(); let h = ''; d.forEach(x => { let c = x.status == 'SUCCESS' ? '#10b981' : (x.status == 'REJECTED' ? '#ef4444' : '#f59e0b'); let n = x.note ? `<br><small style="color:#aaa;">📝 Ket: ${x.note}</small>` : ''; h += `<div style="border-bottom:1px solid #333; padding:10px 0;"><b style="color:var(--gold)">${x.type}</b> | 🪙 ${x.amount.toLocaleString('id-ID')} | <span style="color:${c}; font-weight:bold;">${x.status}</span><br><small>${x.date}</small>${n}</div>`; }); document.getElementById('h-list').innerHTML = h || 'Belum ada transaksi'; openM('m-hist'); }
   </script>
 </body>
 </html>
