@@ -45,6 +45,7 @@ app.get('/api/me', (req, res) => { if (!req.session.userId) return res.json({ lo
 app.get('/api/history', (req, res) => { if (!req.session.userId) return res.json([]); db.all(`SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC LIMIT 15`, [req.session.userId], (err, rows) => res.json(rows || [])); });
 app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ success: true }); });
 
+// API ADMIN
 app.get('/api/admin/users', (req, res) => { if (req.session.role !== 'admin') return res.status(403).send(); db.all(`SELECT id, username, coin, status FROM users WHERE role = 'member' ORDER BY id DESC`, (err, rows) => res.json(rows)); });
 app.post('/api/admin/update-user', (req, res) => { if (req.session.role !== 'admin') return res.status(403).send(); const { id, coin, status, password, note, username } = req.body; db.get(`SELECT coin FROM users WHERE id = ?`, [id], (err, user) => { if(!user) return res.json({success: false}); const diff = coin - user.coin; if (diff !== 0) { const adjType = diff > 0 ? 'BONUS ADMIN' : 'POTONGAN ADMIN'; db.run(`INSERT INTO transactions (user_id, username, type, amount, status, note) VALUES (?, ?, ?, ?, 'SUCCESS', ?)`, [id, username, adjType, Math.abs(diff), note]); } if (password && password.trim() !== "") { bcrypt.hash(password, 10, (err, hash) => db.run(`UPDATE users SET password = ?, coin = ?, status = ? WHERE id = ?`, [hash, coin, status, id])); } else { db.run(`UPDATE users SET coin = ?, status = ? WHERE id = ?`, [coin, status, id]); } res.json({ success: true }); }); });
 
@@ -61,11 +62,12 @@ io.on('connection', (socket) => {
     socket.on('set_target_jp', (data) => { 
         if (session.role === 'admin') { 
             let targetUser = data.username.toLowerCase().trim();
-            targetedJP[targetUser] = { gameId: data.gameId, type: data.type, multi: parseFloat(data.multi), targetWin: parseInt(data.targetWin) }; 
+            targetedJP[targetUser] = { gameId: data.gameId, type: data.type, multi: parseFloat(data.multi), targetWin: parseInt(data.targetWin), superMode: data.superMode }; 
             socket.emit('notif_msg', `🎯 PANEL DEWA AKTIF: Target JP dipasang untuk ${targetUser.toUpperCase()} di game ${data.gameId.toUpperCase()}!`); 
         } 
     });
 
+    // DI SINI CUMA ADA 1 SLOT SYMBOLS (Yg kedua dihapus)
     const slotSymbols = {
         'zeus': [ { s:'👑', max:4.0 }, { s:'⏳', max:2.5 }, { s:'💍', max:1.5 }, { s:'🛡️', max:1.0 }, { s:'💎', max:0.5 } ],
         'sweet': [ { s:'🍭', max:4.0 }, { s:'🍬', max:2.5 }, { s:'🍇', max:1.5 }, { s:'🍉', max:1.0 }, { s:'🍌', max:0.5 } ],
@@ -79,7 +81,7 @@ io.on('connection', (socket) => {
         
         if (betAmount > 1000000) return socket.emit('game_result', { game: 'slot', status: 'error', msg: '❌ Max Bet 1 Juta bosku!' });
         if (spinType === 'manual' && betAmount < 400) return socket.emit('game_result', { game: 'slot', status: 'error', msg: '❌ Spin Manual Minimal 400 Perak!' });
-        if (spinType !== 'manual' && betAmount < 200) return socket.emit('game_result', { game: 'slot', status: 'error', msg: '❌ Buy Spin Minimal Bet 200 Perak!' });
+        if (spinType !== 'manual' && betAmount < 200) return socket.emit('game_result', { game: 'slot', status: 'error', msg: '❌ Buy Spin Minimal Bet Dasar 200 Perak!' });
 
         let totalCost = betAmount;
         if (spinType === 'buy') totalCost = betAmount * 100;
@@ -100,12 +102,11 @@ io.on('connection', (socket) => {
                 if (gameId === 'sweet') maxwinCap = 25000;
                 if (gameId === 'zeus_super' || gameId === 'princess_super') maxwinCap = 50000; // SUPER MAXWIN
 
-                // CEK SUPER SCATTER INSTANT MAXWIN (Untuk Super Games)
-let isSuperScatterHit = false;
-if ((gameId === 'zeus_super' || gameId === 'princess_super')) {
-    if (isTargeted && tData.type === 'maxwin' && tData.superMode === 'instant') isSuperScatterHit = true;
-    else if (Math.random() < 0.00005) isSuperScatterHit = true; // Hoki Dewa 0.005% (Tanpa panel)
-}
+                // LOGIKA SUPER SCATTER INSTAN DENGAN BENAR (Ga ada tutup kurung nyasar lagi)
+                let isSuperScatterHit = false;
+                if ((gameId === 'zeus_super' || gameId === 'princess_super')) {
+                    if (isTargeted && tData.type === 'maxwin' && tData.superMode === 'instant') isSuperScatterHit = true;
+                    else if (Math.random() < 0.00005) isSuperScatterHit = true; // Hoki Dewa 0.005% (Tanpa panel)
                 }
 
                 if (isSuperScatterHit) {
@@ -116,7 +117,7 @@ if ((gameId === 'zeus_super' || gameId === 'princess_super')) {
                             socket.emit('super_scatter_maxwin', { finalWin: finalWin, finalCoin: u.coin });
                         });
                     });
-                    return; // Stop eksekusi spin biasa
+                    return; // Stop eksekusi dan keluar dari fungsi
                 }
 
                 let triggerFreespin = (spinType !== 'manual') ? true : (Math.random() < 0.01);
@@ -220,12 +221,14 @@ if ((gameId === 'zeus_super' || gameId === 'princess_super')) {
         });
     });
     
-    // (Abaikan Transaksi DB & Game lainnya spt part sblmnya, udh aman semua dibelakang layar)
+    // TRANSAKSI DB DLL
     socket.on('req_deposit', (a) => { db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'DEPOSIT', ?, 'PENDING')`, [session.userId, session.username, a], () => { io.to('admins').emit('admin_new_notif'); socket.emit('notif_msg', `✅ Request terkirim!`); }); });
     socket.on('req_wd', (a) => { db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => { if (!u || u.coin < a) return socket.emit('notif_msg', '❌ Saldo tidak cukup!'); db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [a, session.userId], () => { db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'WD', ?, 'PENDING')`, [session.userId, session.username, a]); io.to(`user_${session.userId}`).emit('update_coin', u.coin - a); io.to('admins').emit('admin_new_notif'); socket.emit('notif_msg', '💸 WD Diproses!'); }); }); });
     socket.on('admin_approve_tx', (id) => { if(session.role!=='admin') return; db.get(`SELECT * FROM transactions WHERE id=? AND status='PENDING'`,[id], (err,tx)=>{ if(!tx)return; db.run(`UPDATE transactions SET status='SUCCESS' WHERE id=?`,[id]); if(tx.type==='DEPOSIT'){ db.run(`UPDATE users SET coin=coin+? WHERE id=?`,[tx.amount, tx.user_id],()=>{ db.get(`SELECT coin FROM users WHERE id=?`,[tx.user_id],(err,u)=>io.to(`user_${tx.user_id}`).emit('update_coin',u.coin)); }); } socket.emit('deposit_approved_success'); }); });
     socket.on('admin_reject_tx', (data) => { if(session.role!=='admin') return; db.get(`SELECT * FROM transactions WHERE id=? AND status='PENDING'`,[data.id], (err,tx)=>{ if(!tx)return; db.run(`UPDATE transactions SET status='REJECTED', note=? WHERE id=?`,[data.reason, data.id]); if(tx.type==='WD'){ db.run(`UPDATE users SET coin=coin+? WHERE id=?`,[tx.amount, tx.user_id],()=>{ db.get(`SELECT coin FROM users WHERE id=?`,[tx.user_id],(err,u)=>io.to(`user_${tx.user_id}`).emit('update_coin',u.coin)); }); } socket.emit('deposit_approved_success'); }); });
     socket.on('get_pending_deposits', () => { if(session.role==='admin') db.all(`SELECT * FROM transactions WHERE status='PENDING' ORDER BY date DESC`, (err, rows)=>socket.emit('admin_deposit_list', rows)); });
+    
+    // CASINO
     socket.on('play_spaceman', (d) => {}); socket.on('cashout_spaceman', (d) => {}); socket.on('crash_spaceman', () => {}); socket.on('play_baccarat', (d) => {}); socket.on('play_roulette', (d) => {}); socket.on('play_coinflip', (d) => {}); socket.on('play_spinwheel', (d) => {});
 });
 
