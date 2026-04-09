@@ -1,3 +1,4 @@
+
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
@@ -12,9 +13,7 @@ const io = new Server(server);
 
 let rtpBandar = { roulette: 40, coinflip: 40, spinwheel: 30, spaceman: 30, baccarat: 40, slot: 35 };
 let forceSpacemanMulti = null; 
-
-// PANEL DEWA: Simpan target JP member
-let targetedJP = {}; // Format: { username: { gameId, type, multi, targetWin } }
+let targetedJP = {}; 
 
 const dbPath = process.env.DATA_DIR ? path.join(process.env.DATA_DIR, 'lgolux.db') : './lgolux.db';
 const db = new sqlite3.Database(dbPath);
@@ -85,10 +84,7 @@ app.get('/api/history', (req, res) => {
 app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ success: true }); });
 
 // API ADMIN
-app.get('/api/admin/users', (req, res) => {
-    if (req.session.role !== 'admin') return res.status(403).send();
-    db.all(`SELECT id, username, coin, status FROM users WHERE role = 'member' ORDER BY id DESC`, (err, rows) => res.json(rows));
-});
+app.get('/api/admin/users', (req, res) => { if (req.session.role !== 'admin') return res.status(403).send(); db.all(`SELECT id, username, coin, status FROM users WHERE role = 'member' ORDER BY id DESC`, (err, rows) => res.json(rows)); });
 app.post('/api/admin/update-user', (req, res) => {
     if (req.session.role !== 'admin') return res.status(403).send();
     const { id, coin, status, password, note, username } = req.body;
@@ -99,11 +95,8 @@ app.post('/api/admin/update-user', (req, res) => {
             const adjType = diff > 0 ? 'BONUS ADMIN' : 'POTONGAN ADMIN';
             db.run(`INSERT INTO transactions (user_id, username, type, amount, status, note) VALUES (?, ?, ?, ?, 'SUCCESS', ?)`, [id, username, adjType, Math.abs(diff), note]);
         }
-        if (password && password.trim() !== "") {
-            bcrypt.hash(password, 10, (err, hash) => db.run(`UPDATE users SET password = ?, coin = ?, status = ? WHERE id = ?`, [hash, coin, status, id]));
-        } else {
-            db.run(`UPDATE users SET coin = ?, status = ? WHERE id = ?`, [coin, status, id]);
-        }
+        if (password && password.trim() !== "") { bcrypt.hash(password, 10, (err, hash) => db.run(`UPDATE users SET password = ?, coin = ?, status = ? WHERE id = ?`, [hash, coin, status, id]));
+        } else { db.run(`UPDATE users SET coin = ?, status = ? WHERE id = ?`, [coin, status, id]); }
         res.json({ success: true });
     });
 });
@@ -120,26 +113,22 @@ io.on('connection', (socket) => {
         if (session.role === 'admin') { 
             rtpBandar.roulette = newRtp.roulette; rtpBandar.coinflip = newRtp.coinflip; rtpBandar.spinwheel = newRtp.spinwheel;
             rtpBandar.spaceman = newRtp.astronaut || newRtp.spaceman || 30; rtpBandar.slot = newRtp.slot || 35; 
-            io.to('admins').emit('rtp_data', { ...rtpBandar, astronaut: rtpBandar.spaceman, slot: rtpBandar.slot }); 
-            socket.emit('notif_msg', '😈 Win Rate Normal Diperbarui!');
+            io.to('admins').emit('rtp_data', { ...rtpBandar, astronaut: rtpBandar.spaceman, slot: rtpBandar.slot }); socket.emit('notif_msg', '😈 Win Rate Normal Diperbarui!');
         } 
     });
 
-    socket.on('force_astro', (val) => {
-        if (session.role === 'admin') { forceSpacemanMulti = parseFloat(val); socket.emit('notif_msg', `🚀 SUPER JP AKTIF: Spaceman berikutnya PASTI x${forceSpacemanMulti}!`); }
-    });
+    socket.on('force_astro', (val) => { if (session.role === 'admin') { forceSpacemanMulti = parseFloat(val); socket.emit('notif_msg', `🚀 SUPER JP AKTIF: Spaceman berikutnya PASTI x${forceSpacemanMulti}!`); } });
+    socket.on('set_target_jp', (data) => { if (session.role === 'admin') { targetedJP[data.username] = { gameId: data.gameId, type: data.type, multi: parseFloat(data.multi), targetWin: parseInt(data.targetWin) }; socket.emit('notif_msg', `🎯 PANEL DEWA AKTIF: Target JP dipasang untuk ${data.username.toUpperCase()} di game ${data.gameId.toUpperCase()}!`); } });
 
-    // PANEL DEWA: SETTING TARGET JP
-    socket.on('set_target_jp', (data) => {
-        if (session.role === 'admin') {
-            targetedJP[data.username] = { gameId: data.gameId, type: data.type, multi: parseFloat(data.multi), targetWin: parseInt(data.targetWin) };
-            socket.emit('notif_msg', `🎯 PANEL DEWA AKTIF: Target JP dipasang untuk ${data.username.toUpperCase()} di game ${data.gameId.toUpperCase()}!`);
-        }
-    });
+    // KASTA SIMBOL (Buat nentuin harga pecahan & simbol apa yang pecah)
+    const slotSymbols = {
+        'zeus': [ { s:'👑', max:4.0 }, { s:'⏳', max:2.5 }, { s:'💍', max:1.5 }, { s:'🛡️', max:1.0 }, { s:'💎', max:0.5 } ],
+        'sweet': [ { s:'🍭', max:4.0 }, { s:'🍬', max:2.5 }, { s:'🍇', max:1.5 }, { s:'🍉', max:1.0 }, { s:'🍌', max:0.5 } ],
+        'princess': [ { s:'👑', max:4.0 }, { s:'⭐', max:2.5 }, { s:'❤️', max:1.5 }, { s:'☀️', max:1.0 }, { s:'🌙', max:0.5 } ]
+    };
 
-    // --- GAME SLOT V3 (ZEUS, PRINCESS, SWEET) ---
     socket.on('play_video_slot', (data) => {
-        const { betAmount, spinType, gameId } = data; // spinType: 'manual' | 'buy' | 'super'
+        const { betAmount, spinType, gameId } = data; 
         
         if (betAmount > 1000000) return socket.emit('game_result', { game: 'slot', status: 'error', msg: '❌ Max Bet 1 Juta bosku!' });
         if (spinType === 'manual' && betAmount < 400) return socket.emit('game_result', { game: 'slot', status: 'error', msg: '❌ Spin Manual Minimal 400 Perak!' });
@@ -156,63 +145,64 @@ io.on('connection', (socket) => {
             db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [totalCost, session.userId], () => {
                 socket.emit('update_coin', user.coin - totalCost);
                 
-                // CEK APAKAH USER INI JADI TARGET PANEL DEWA
                 let isTargeted = targetedJP[session.username] && targetedJP[session.username].gameId === gameId;
                 let tData = isTargeted ? targetedJP[session.username] : null;
-
                 let triggerFreespin = (spinType !== 'manual') ? true : (Math.random() < 0.01);
                 
                 if (triggerFreespin || isTargeted) {
-                    // --- MODE FREESPIN 15X (ATAU TARGET JP) ---
+                    // FREESPIN MODE
                     let spinsData = [];
                     let totalWin = 0;
-                    let globalMulti = 0; // KHUSUS ZEUS & PRINCESS
-
+                    let globalMulti = 0; 
                     let maxwinCap = (gameId === 'sweet') ? 25000 : 15000;
 
                     for(let i = 0; i < 15; i++) {
-                        // LOGIKA PANEL DEWA: Semua JP dijatuhkan di putaran terakhir (ke-15) biar dramatis!
                         if (isTargeted && i === 14) {
                             let dropM = (tData.type === 'maxwin') ? 500 : tData.multi;
                             let reqBase = (tData.type === 'maxwin') ? ((betAmount * maxwinCap) / dropM) : (tData.targetWin / dropM);
+                            let symList = slotSymbols[gameId];
+                            let pickedSym = symList[0].s; // Pilih mahkota buat JP
                             
-                            spinsData.push({ win: reqBase, multi: dropM });
+                            spinsData.push({ win: reqBase, multi: dropM, symbol: pickedSym });
                             if (gameId !== 'sweet') globalMulti += dropM;
-                            
                             totalWin += (gameId === 'sweet') ? (reqBase * dropM) : (reqBase * globalMulti);
                             continue;
                         } else if (isTargeted) {
-                            // Putaran 1-14 zonk biar member deg-degan
-                            spinsData.push({ win: 0, multi: 0 });
+                            spinsData.push({ win: 0, multi: 0, symbol: null });
                             continue;
                         }
 
-                        // LOGIKA RNG NORMAL
+                        // RNG NORMAL FREESPIN
                         let isWinSpin = Math.random() < (rtpBandar.slot / 100);
-                        let spinWin = isWinSpin ? Math.floor(betAmount * (Math.random() * 3 + 0.2)) : 0;
-                        let dropMulti = 0;
-                        const multiList = [2, 5, 10, 15, 20, 25, 50, 100, 250, 500, 1000];
-
-                        if (isWinSpin && Math.random() < 0.35) {
-                            dropMulti = multiList[Math.floor(Math.random() * multiList.length)];
-                            if (spinType === 'super' && Math.random() < 0.3) dropMulti = (Math.random() < 0.5) ? 500 : 1000; // SUPER BUY SERING KELUAR BESAR
+                        let spinWin = 0;
+                        let winSymbol = null;
+                        
+                        if (isWinSpin) {
+                            let symList = slotSymbols[gameId];
+                            let picked = symList[Math.floor(Math.random() * symList.length)];
+                            winSymbol = picked.s;
+                            // Win dihitung dari harga kasta simbol
+                            spinWin = Math.floor(betAmount * (Math.random() * (picked.max - (picked.max/2)) + (picked.max/2)));
                         }
 
-                        spinsData.push({ win: spinWin, multi: dropMulti });
+                        let dropMulti = 0;
+                        if (isWinSpin && Math.random() < 0.35) {
+                            let multiList = [2, 5, 10, 15, 20, 25, 50, 100, 250, 500];
+                            if (gameId === 'sweet') multiList.push(1000); 
+                            dropMulti = multiList[Math.floor(Math.random() * multiList.length)];
+                            if (spinType === 'super' && Math.random() < 0.3) dropMulti = (Math.random() < 0.5) ? 500 : 1000; 
+                        }
+
+                        spinsData.push({ win: spinWin, multi: dropMulti, symbol: winSymbol });
                         
-                        // LOGIKA PERKALIAN: AKUMULASI VS NON-AKUMULASI
-                        if (gameId === 'sweet') {
-                            totalWin += spinWin * (dropMulti > 0 ? dropMulti : 1);
+                        if (gameId === 'sweet') { totalWin += spinWin * (dropMulti > 0 ? dropMulti : 1);
                         } else {
-                            if (dropMulti > 0 && spinWin > 0) globalMulti += dropMulti; // Numpuk
+                            if (dropMulti > 0 && spinWin > 0) globalMulti += dropMulti; 
                             totalWin += spinWin * (globalMulti > 0 ? globalMulti : 1);
                         }
                     }
 
-                    // CAP MAXWIN
                     if (totalWin > betAmount * maxwinCap) totalWin = betAmount * maxwinCap;
-
-                    // Hapus target setelah dipake
                     if (isTargeted) delete targetedJP[session.username];
 
                     db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [totalWin, session.userId], () => {
@@ -222,48 +212,47 @@ io.on('connection', (socket) => {
                     });
 
                 } else {
-                    // --- MODE SPIN BIASA (MANUAL) ---
+                    // MANUAL SPIN
                     const isWin = Math.random() < (rtpBandar.slot / 100);
-                    let normalWin = isWin ? Math.floor(betAmount * (Math.random() * 4 + 0.1)) : 0;
-                    let dropMulti = 0;
+                    let normalWin = 0;
+                    let winSymbol = null;
+                    
+                    if (isWin) {
+                        let symList = slotSymbols[gameId];
+                        let picked = symList[Math.floor(Math.random() * symList.length)];
+                        winSymbol = picked.s;
+                        normalWin = Math.floor(betAmount * (Math.random() * (picked.max - (picked.max/2)) + (picked.max/2)));
+                    }
 
-                    // LOGIKA ZEUS & PRINCESS: PERKALIAN BISA TURUN DI LUAR FREESPIN
+                    let dropMulti = 0;
                     if (isWin && (gameId === 'zeus' || gameId === 'princess') && Math.random() < 0.15) {
                         const multiList = [2, 5, 10, 15, 20, 25, 50, 100, 250, 500];
                         dropMulti = multiList[Math.floor(Math.random() * multiList.length)];
-                        normalWin = normalWin * dropMulti; // Langsung dikalikan
+                        normalWin = normalWin * dropMulti; 
                     }
                     
                     if (normalWin > 0) {
                         db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [normalWin, session.userId], () => {
                             db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
                                 io.to(`user_${session.userId}`).emit('update_coin', u.coin);
-                                socket.emit('slot_normal_result', { status: 'win', winAmount: normalWin, multi: dropMulti });
+                                socket.emit('slot_normal_result', { status: 'win', winAmount: normalWin, multi: dropMulti, symbol: winSymbol });
                             });
                         });
                     } else {
-                        socket.emit('slot_normal_result', { status: 'lose', winAmount: 0, multi: 0 });
+                        socket.emit('slot_normal_result', { status: 'lose', winAmount: 0, multi: 0, symbol: null });
                     }
                 }
             });
         });
     });
 
-    // TRANSAKSI DEPO WD DLL (Sama spt sebelumnya)
+    // TRANSAKSI & GAME LAIN
     socket.on('req_deposit', (a) => { db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'DEPOSIT', ?, 'PENDING')`, [session.userId, session.username, a], () => { io.to('admins').emit('admin_new_notif'); socket.emit('notif_msg', `✅ Request terkirim!`); }); });
     socket.on('req_wd', (a) => { db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => { if (!u || u.coin < a) return socket.emit('notif_msg', '❌ Saldo tidak cukup!'); db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [a, session.userId], () => { db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'WD', ?, 'PENDING')`, [session.userId, session.username, a]); io.to(`user_${session.userId}`).emit('update_coin', u.coin - a); io.to('admins').emit('admin_new_notif'); socket.emit('notif_msg', '💸 WD Diproses!'); }); }); });
     socket.on('admin_approve_tx', (id) => { if(session.role!=='admin') return; db.get(`SELECT * FROM transactions WHERE id=? AND status='PENDING'`,[id], (err,tx)=>{ if(!tx)return; db.run(`UPDATE transactions SET status='SUCCESS' WHERE id=?`,[id]); if(tx.type==='DEPOSIT'){ db.run(`UPDATE users SET coin=coin+? WHERE id=?`,[tx.amount, tx.user_id],()=>{ db.get(`SELECT coin FROM users WHERE id=?`,[tx.user_id],(err,u)=>io.to(`user_${tx.user_id}`).emit('update_coin',u.coin)); }); } socket.emit('deposit_approved_success'); }); });
     socket.on('admin_reject_tx', (data) => { if(session.role!=='admin') return; db.get(`SELECT * FROM transactions WHERE id=? AND status='PENDING'`,[data.id], (err,tx)=>{ if(!tx)return; db.run(`UPDATE transactions SET status='REJECTED', note=? WHERE id=?`,[data.reason, data.id]); if(tx.type==='WD'){ db.run(`UPDATE users SET coin=coin+? WHERE id=?`,[tx.amount, tx.user_id],()=>{ db.get(`SELECT coin FROM users WHERE id=?`,[tx.user_id],(err,u)=>io.to(`user_${tx.user_id}`).emit('update_coin',u.coin)); }); } socket.emit('deposit_approved_success'); }); });
     socket.on('get_pending_deposits', () => { if(session.role==='admin') db.all(`SELECT * FROM transactions WHERE status='PENDING' ORDER BY date DESC`, (err, rows)=>socket.emit('admin_deposit_list', rows)); });
-
-    // GAME CASINO (Spaceman, Baccarat, Roulette, Coinflip, Spinwheel - Persis part 2)
-    socket.on('play_spaceman', (d) => { /* Tetap sama */ });
-    socket.on('cashout_spaceman', (d) => { /* Tetap sama */ });
-    socket.on('crash_spaceman', () => { /* Tetap sama */ });
-    socket.on('play_baccarat', (d) => { /* Tetap sama */ });
-    socket.on('play_roulette', (d) => { /* Tetap sama */ });
-    socket.on('play_coinflip', (d) => { /* Tetap sama */ });
-    socket.on('play_spinwheel', (d) => { /* Tetap sama */ });
+    socket.on('play_spaceman', (d) => { /* Tetap Sama */ }); socket.on('cashout_spaceman', (d) => { /* Tetap Sama */ }); socket.on('crash_spaceman', () => { /* Tetap Sama */ }); socket.on('play_baccarat', (d) => { /* Tetap Sama */ }); socket.on('play_roulette', (d) => { /* Tetap Sama */ }); socket.on('play_coinflip', (d) => { /* Tetap Sama */ }); socket.on('play_spinwheel', (d) => { /* Tetap Sama */ });
 });
 
 server.listen(process.env.PORT || 3000, '0.0.0.0', () => console.log(`🚀 LGOLUX LIVE!`));
