@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>LGOLUX PRINCESS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #fde047; --bg: #4a044e; --panel: #2e1065; }
+    body { margin: 0; background: #000; color: white; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; display: flex; justify-content: center;}
+    .game-container { width: 100%; max-width: 420px; height: 100dvh; display: flex; flex-direction: column; background: radial-gradient(circle at top, #c026d3 0%, var(--bg) 100%); position: relative; overflow: hidden;}
+    .top-bar { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%); position: absolute; top: 0; left: 0; right: 0; z-index: 10; padding-top: calc(15px + env(safe-area-inset-top, 0px)); }
+    .btn-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 12px;}
+    .saldo-box { background: rgba(0,0,0,0.8); border: 1px solid var(--gold); padding: 8px 18px; border-radius: 10px; font-weight: 800; color: var(--gold);}
+    .screen { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 40px; position: relative;}
+    .game-title { font-size: 32px; font-weight: 900; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8), 0 0 10px #f0abfc; margin-bottom: 5px; font-family: cursive; letter-spacing: 1px;}
+    
+    .total-multi-box { background: rgba(0,0,0,0.8); border: 2px solid var(--gold); border-radius: 10px; padding: 5px 20px; display: none; flex-direction: column; align-items: center; margin-bottom: 10px; box-shadow: 0 0 20px rgba(253,224,71,0.5);}
+    .tm-label { font-size: 10px; color: var(--gold); font-weight: bold; text-transform: uppercase;}
+    .tm-val { font-size: 32px; font-weight: 900; color: #fff; text-shadow: 0 0 10px #fde047;}
+
+    .slot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 10px; border: 3px solid #fbcfe8; width: 92%; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);}
+    .slot-cell { aspect-ratio: 1; background: rgba(255,255,255,0.1); border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 35px; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.2);}
+    .slot-cell.spin { animation: blurSpin 0.1s infinite; }
+    @keyframes blurSpin { 0% { filter: blur(2px); transform: translateY(-5px); } 100% { filter: blur(0px); transform: translateY(5px); } }
+
+    /* BINTANG PRINCESS */
+    .bintang-multi { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 22px; font-weight: 900; text-shadow: 0 2px 5px rgba(0,0,0,0.8); z-index: 5; animation: dropStar 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius: 50%; border: 3px solid;}
+    @keyframes dropStar { 0% { transform: scale(0) rotate(180deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+    .status-msg { font-size: 14px; font-weight: 900; color: #fff; z-index: 10; margin-top: 10px; background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 30px; text-align: center; border: 1px solid var(--gold); display: none;}
+    .panel { background: var(--panel); padding: 15px; border-top: 3px solid #f0abfc; z-index: 10; border-radius: 25px 25px 0 0; padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));}
+    .input-row { display: flex; gap: 10px; margin-bottom: 10px;}
+    .bet-box { flex: 1; background: #000; border: 1px solid #7e22ce; border-radius: 12px; padding: 10px; display: flex; flex-direction: column;}
+    .bet-box label { font-size: 10px; color:#e9d5ff; font-weight: bold; margin-bottom: 2px;}
+    .bet-box input { width: 100%; border: none; background: transparent; color: white; font-size: 18px; font-weight: 900; outline: none;}
+    .btn-row { display: flex; gap: 8px;}
+    
+    .btn-spin { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: 900; font-size: 16px; cursor: pointer; color: white; background: linear-gradient(180deg, #d946ef, #a21caf); box-shadow: 0 4px 0 #701a75;}
+    .btn-spin:active { transform: translateY(4px); box-shadow: 0 0 0 #701a75; }
+    .btn-buy { flex: 1; padding: 10px; border-radius: 12px; border: none; font-weight: 900; font-size: 14px; cursor: pointer; color: black; background: linear-gradient(180deg, #fef08a, var(--gold)); box-shadow: 0 4px 0 #b45309; display: flex; flex-direction: column; align-items: center; justify-content: center;}
+    .btn-buy:active { transform: translateY(4px); box-shadow: 0 0 0 #b45309; }
+    .btn-buy small { font-size: 11px; font-weight: 800; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 5px; margin-top: 2px;}
+    .disabled { filter: grayscale(1); pointer-events: none; opacity: 0.6;}
+  </style>
+</head>
+<body>
+  <div class="game-container" id="gc">
+    <div class="top-bar">
+      <a href="/" class="btn-back">🔙 LOBI</a>
+      <div class="saldo-box">🪙 <span id="n-c">0</span></div>
+    </div>
+    <div class="screen">
+      <div class="game-title">PRINCESS</div>
+      
+      <div id="tm-box" class="total-multi-box">
+          <div class="tm-label">TOTAL PERKALIAN</div>
+          <div id="tm-val" class="tm-val">x0</div>
+      </div>
+
+      <div class="slot-grid" id="grid"></div>
+      <div id="status-msg" class="status-msg">MEMUTAR...</div>
+    </div>
+    <div class="panel" id="bet-panel">
+      <div class="input-row">
+        <div class="bet-box">
+            <label>BET DASAR (Min. Buy: 200)</label>
+            <input type="text" id="bet-input" value="400" oninput="formatRupiah(this); calcBuySpin();">
+        </div>
+      </div>
+      <div class="btn-row">
+          <button class="btn-spin" onclick="playSlot('manual')">🔄 SPIN (Min 400)</button>
+          <button class="btn-buy" onclick="playSlot('buy')">🎁 BUY FREESPIN <br><small id="buy-cost">🪙 40.000</small></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket;
+    const symbols = ['☀️', '🌙', '⭐', '❤️', '❄️']; 
+    let globalMultiplier = 0; 
+
+    fetch('/api/me').then(r => r.json()).then(d => { if(!d.loggedIn) window.location.href = '/'; else masuk(d); });
+    function formatRupiah(obj) { let val = obj.value.replace(/[^0-9]/g, ''); obj.value = val ? parseInt(val).toLocaleString('id-ID') : ''; }
+    function calcBuySpin() { let b = parseInt(document.getElementById('bet-input').value.replace(/\./g, '')) || 0; document.getElementById('buy-cost').innerText = '🪙 ' + (b * 100).toLocaleString('id-ID'); }
+    function initGrid() { const grid = document.getElementById('grid'); grid.innerHTML = ''; for(let i=0; i<20; i++) grid.innerHTML += `<div class="slot-cell" id="c-${i}">?</div>`; }
+    initGrid(); calcBuySpin();
+
+    // KASTA WARNA PRINCESS (Love / Bintang)
+    function getMultiColor(val) {
+        if(val >= 500) return { bg: 'radial-gradient(circle, #ef4444, #7f1d1d)', border: '#fca5a5', color: '#fff', icon: '❤️' };
+        if(val >= 50) return { bg: 'radial-gradient(circle, #f59e0b, #b45309)', border: '#fef08a', color: '#000', icon: '⭐' };
+        if(val >= 15) return { bg: 'radial-gradient(circle, #ec4899, #9d174d)', border: '#fbcfe8', color: '#fff', icon: '💖' };
+        return { bg: 'radial-gradient(circle, #10b981, #064e3b)', border: '#6ee7b7', color: '#fff', icon: '💚' }; 
+    }
+
+    function masuk(d) {
+      document.getElementById('n-c').innerText = d.coin.toLocaleString('id-ID');
+      socket = io();
+      socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID'));
+      socket.on('game_result', r => { if(r.status === 'error') { alert(r.msg); document.getElementById('bet-panel').classList.remove('disabled'); document.getElementById('status-msg').style.display = 'none'; } });
+      
+      socket.on('slot_normal_result', (data) => stopGridAnimation(false, data.multi, data));
+
+      socket.on('slot_freespin_start', (data) => {
+          document.getElementById('gc').style.background = 'radial-gradient(circle at top, #db2777 0%, #4a044e 100%)'; 
+          document.getElementById('tm-box').style.display = 'flex';
+          globalMultiplier = 0; document.getElementById('tm-val').innerText = 'x0';
+          
+          let spinArray = data.spins; let currentSpinIdx = 0;
+          let fsInterval = setInterval(() => {
+              if(currentSpinIdx >= 15) {
+                  clearInterval(fsInterval);
+                  setTimeout(() => {
+                      document.getElementById('status-msg').innerText = `🏆 TOTAL WIN: 🪙 ${data.finalWin.toLocaleString('id-ID')}`;
+                      document.getElementById('n-c').innerText = data.finalCoin.toLocaleString('id-ID');
+                      setTimeout(() => { document.getElementById('bet-panel').classList.remove('disabled'); document.getElementById('status-msg').style.display = 'none'; document.getElementById('gc').style.background = 'radial-gradient(circle at top, #c026d3 0%, var(--bg) 100%)'; document.getElementById('tm-box').style.display = 'none';}, 4000);
+                  }, 1500); return;
+              }
+              let currentData = spinArray[currentSpinIdx];
+              document.getElementById('status-msg').innerText = `✨ FREESPIN: ${15 - currentSpinIdx} TERSISA`;
+              startGridAnimation();
+              setTimeout(() => stopGridAnimation(true, currentData.multi), 600); 
+              currentSpinIdx++;
+          }, 2000); 
+      });
+    }
+
+    function startGridAnimation() { for(let i=0; i<20; i++) { let cell = document.getElementById(`c-${i}`); cell.innerHTML = symbols[Math.floor(Math.random() * symbols.length)]; cell.classList.add('spin'); } }
+
+    function stopGridAnimation(isFreespin, dropMulti = null, normalData = null) {
+        for(let i=0; i<20; i++) {
+            let cell = document.getElementById(`c-${i}`); cell.classList.remove('spin'); cell.innerHTML = symbols[Math.floor(Math.random() * symbols.length)];
+            // PRINCESS: Multiplier turun
+            if (dropMulti > 0 && Math.random() < 0.15) { 
+                let style = getMultiColor(dropMulti);
+                cell.innerHTML = `<div class="bintang-multi" style="background:${style.bg}; border-color:${style.border}; color:${style.color};">${style.icon}<span style="font-size:12px">x${dropMulti}</span></div>`;
+            }
+        }
+        
+        if(isFreespin && dropMulti > 0) {
+            globalMultiplier += dropMulti;
+            document.getElementById('tm-val').innerText = 'x' + globalMultiplier;
+            document.getElementById('tm-box').style.transform = 'scale(1.1)';
+            setTimeout(()=> document.getElementById('tm-box').style.transform = 'scale(1)', 200);
+        }
+
+        if (!isFreespin && normalData) {
+            let msgBox = document.getElementById('status-msg');
+            msgBox.innerText = normalData.status === 'win' ? `🎉 MENANG: 🪙 ${normalData.winAmount.toLocaleString('id-ID')}` : `💀 ZONK`;
+            msgBox.style.color = normalData.status === 'win' ? '#10b981' : '#f43f5e';
+            setTimeout(() => { document.getElementById('bet-panel').classList.remove('disabled'); msgBox.style.display = 'none'; }, 1500);
+        }
+    }
+
+    function playSlot(type) {
+        let b = parseInt(document.getElementById('bet-input').value.replace(/\./g, ''));
+        if(!b || b <= 0) return alert("Isi bet bosku!");
+        if(type === 'manual' && b < 400) return alert("Spin manual minimal 400 bosku!");
+        if(type !== 'manual' && b < 200) return alert("Buy spin minimal bet dasar 200 bosku!");
+        
+        document.getElementById('bet-panel').classList.add('disabled'); document.getElementById('status-msg').style.display = 'block'; document.getElementById('status-msg').innerText = '🔄 MEMUTAR...'; document.getElementById('status-msg').style.color = '#fff';
+        startGridAnimation(); socket.emit('play_video_slot', { betAmount: b, spinType: type, gameId: 'princess' }); // GAME ID PRINCESS
+    }
+  </script>
+</body>
+</html>
