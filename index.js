@@ -1,4 +1,3 @@
-
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
@@ -22,16 +21,11 @@ db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT DEFAULT 'member', coin INTEGER DEFAULT 0, status TEXT DEFAULT 'AKTIF')`);
     db.run(`CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, username TEXT, type TEXT, amount INTEGER, status TEXT DEFAULT 'PENDING', note TEXT, date DATETIME DEFAULT CURRENT_TIMESTAMP)`);
     db.run(`ALTER TABLE transactions ADD COLUMN note TEXT`, (err) => {}); 
-    bcrypt.hash('admin123', 10, (err, hash) => {
-        db.run(`INSERT OR IGNORE INTO users (username, password, role, coin) VALUES ('admin', ?, 'admin', 9999999)`, [hash]);
-    });
+    bcrypt.hash('admin123', 10, (err, hash) => { db.run(`INSERT OR IGNORE INTO users (username, password, role, coin) VALUES ('admin', ?, 'admin', 9999999)`, [hash]); });
 });
 
 const sessionMiddleware = session({ secret: 'lgolux-rahasia-jp', resave: false, saveUninitialized: true });
-app.use(express.json());
-app.use(sessionMiddleware);
-app.use(express.static(path.join(__dirname, 'public')));
-io.engine.use(sessionMiddleware);
+app.use(express.json()); app.use(sessionMiddleware); app.use(express.static(path.join(__dirname, 'public'))); io.engine.use(sessionMiddleware);
 
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/spaceman', (req, res) => res.sendFile(path.join(__dirname, 'public', 'spaceman.html')));
@@ -43,63 +37,15 @@ app.get('/sweet', (req, res) => res.sendFile(path.join(__dirname, 'public', 'swe
 app.get('/zeus', (req, res) => res.sendFile(path.join(__dirname, 'public', 'zeus.html')));
 app.get('/princess', (req, res) => res.sendFile(path.join(__dirname, 'public', 'princess.html')));
 
-app.post('/api/register', (req, res) => {
-    const { username, password, role } = req.body;
-    if (!username || !password) return res.json({ success: false, msg: '⚠️ Username dan Password wajib diisi!' });
-    const userRole = (role === 'admin' && req.session.role === 'admin') ? 'admin' : 'member'; 
-    bcrypt.hash(password, 10, (err, hash) => {
-        db.run(`INSERT INTO users (username, password, role) VALUES (?, ?, ?)`, [username, hash, userRole], function(err) {
-            if (err) return res.json({ success: false, msg: '❌ Username sudah dipakai!' });
-            res.json({ success: true, msg: '✅ Akun berhasil dibuat!' });
-        });
-    });
-});
-
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) return res.json({ success: false, msg: '⚠️ Username dan Password wajib diisi!' });
-    db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, user) => {
-        if (!user) return res.json({ success: false, msg: '❌ User tidak ditemukan!' });
-        if (user.status === 'BLOKIR') return res.json({ success: false, msg: '🚫 ID ANDA DIBLOKIR BANDAR!' });
-        bcrypt.compare(password, user.password, (err, match) => {
-            if (!match) return res.json({ success: false, msg: '❌ Password salah!' });
-            req.session.userId = user.id; req.session.username = user.username; req.session.role = user.role;
-            res.json({ success: true, role: user.role });
-        });
-    });
-});
-
-app.get('/api/me', (req, res) => {
-    if (!req.session.userId) return res.json({ loggedIn: false });
-    db.get(`SELECT id, username, role, coin, status FROM users WHERE id = ?`, [req.session.userId], (err, user) => {
-        if (user) res.json({ loggedIn: true, ...user }); else res.json({ loggedIn: false });
-    });
-});
-
-app.get('/api/history', (req, res) => {
-    if (!req.session.userId) return res.json([]);
-    db.all(`SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC LIMIT 15`, [req.session.userId], (err, rows) => res.json(rows || []));
-});
-
+app.post('/api/register', (req, res) => { const { username, password, role } = req.body; if (!username || !password) return res.json({ success: false, msg: '⚠️ Username dan Password wajib diisi!' }); const userRole = (role === 'admin' && req.session.role === 'admin') ? 'admin' : 'member'; bcrypt.hash(password, 10, (err, hash) => { db.run(`INSERT INTO users (username, password, role) VALUES (?, ?, ?)`, [username.toLowerCase(), hash, userRole], function(err) { if (err) return res.json({ success: false, msg: '❌ Username sudah dipakai!' }); res.json({ success: true, msg: '✅ Akun berhasil dibuat!' }); }); }); });
+app.post('/api/login', (req, res) => { const { username, password } = req.body; if (!username || !password) return res.json({ success: false, msg: '⚠️ Wajib diisi!' }); db.get(`SELECT * FROM users WHERE username = ?`, [username.toLowerCase()], (err, user) => { if (!user) return res.json({ success: false, msg: '❌ User tidak ditemukan!' }); if (user.status === 'BLOKIR') return res.json({ success: false, msg: '🚫 DIBLOKIR!' }); bcrypt.compare(password, user.password, (err, match) => { if (!match) return res.json({ success: false, msg: '❌ Password salah!' }); req.session.userId = user.id; req.session.username = user.username; req.session.role = user.role; res.json({ success: true, role: user.role }); }); }); });
+app.get('/api/me', (req, res) => { if (!req.session.userId) return res.json({ loggedIn: false }); db.get(`SELECT id, username, role, coin, status FROM users WHERE id = ?`, [req.session.userId], (err, user) => { if (user) res.json({ loggedIn: true, ...user }); else res.json({ loggedIn: false }); }); });
+app.get('/api/history', (req, res) => { if (!req.session.userId) return res.json([]); db.all(`SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC LIMIT 15`, [req.session.userId], (err, rows) => res.json(rows || [])); });
 app.post('/api/logout', (req, res) => { req.session.destroy(); res.json({ success: true }); });
 
 // API ADMIN
 app.get('/api/admin/users', (req, res) => { if (req.session.role !== 'admin') return res.status(403).send(); db.all(`SELECT id, username, coin, status FROM users WHERE role = 'member' ORDER BY id DESC`, (err, rows) => res.json(rows)); });
-app.post('/api/admin/update-user', (req, res) => {
-    if (req.session.role !== 'admin') return res.status(403).send();
-    const { id, coin, status, password, note, username } = req.body;
-    db.get(`SELECT coin FROM users WHERE id = ?`, [id], (err, user) => {
-        if(!user) return res.json({success: false});
-        const diff = coin - user.coin;
-        if (diff !== 0) {
-            const adjType = diff > 0 ? 'BONUS ADMIN' : 'POTONGAN ADMIN';
-            db.run(`INSERT INTO transactions (user_id, username, type, amount, status, note) VALUES (?, ?, ?, ?, 'SUCCESS', ?)`, [id, username, adjType, Math.abs(diff), note]);
-        }
-        if (password && password.trim() !== "") { bcrypt.hash(password, 10, (err, hash) => db.run(`UPDATE users SET password = ?, coin = ?, status = ? WHERE id = ?`, [hash, coin, status, id]));
-        } else { db.run(`UPDATE users SET coin = ?, status = ? WHERE id = ?`, [coin, status, id]); }
-        res.json({ success: true });
-    });
-});
+app.post('/api/admin/update-user', (req, res) => { if (req.session.role !== 'admin') return res.status(403).send(); const { id, coin, status, password, note, username } = req.body; db.get(`SELECT coin FROM users WHERE id = ?`, [id], (err, user) => { if(!user) return res.json({success: false}); const diff = coin - user.coin; if (diff !== 0) { const adjType = diff > 0 ? 'BONUS ADMIN' : 'POTONGAN ADMIN'; db.run(`INSERT INTO transactions (user_id, username, type, amount, status, note) VALUES (?, ?, ?, ?, 'SUCCESS', ?)`, [id, username, adjType, Math.abs(diff), note]); } if (password && password.trim() !== "") { bcrypt.hash(password, 10, (err, hash) => db.run(`UPDATE users SET password = ?, coin = ?, status = ? WHERE id = ?`, [hash, coin, status, id])); } else { db.run(`UPDATE users SET coin = ?, status = ? WHERE id = ?`, [coin, status, id]); } res.json({ success: true }); }); });
 
 io.on('connection', (socket) => {
     const session = socket.request.session;
@@ -109,18 +55,19 @@ io.on('connection', (socket) => {
     if (session.role === 'admin') socket.join('admins');
 
     socket.on('get_rtp', () => { if (session.role === 'admin') socket.emit('rtp_data', { ...rtpBandar, astronaut: rtpBandar.spaceman, slot: rtpBandar.slot }); });
-    socket.on('update_rtp', (newRtp) => { 
+    socket.on('update_rtp', (newRtp) => { if (session.role === 'admin') { rtpBandar.roulette = newRtp.roulette; rtpBandar.coinflip = newRtp.coinflip; rtpBandar.spinwheel = newRtp.spinwheel; rtpBandar.spaceman = newRtp.astronaut || newRtp.spaceman || 30; rtpBandar.slot = newRtp.slot || 35; io.to('admins').emit('rtp_data', { ...rtpBandar, astronaut: rtpBandar.spaceman, slot: rtpBandar.slot }); socket.emit('notif_msg', '😈 Win Rate Normal Diperbarui!'); } });
+
+    socket.on('force_astro', (val) => { if (session.role === 'admin') { forceSpacemanMulti = parseFloat(val); socket.emit('notif_msg', `🚀 SUPER JP AKTIF: Spaceman berikutnya PASTI x${forceSpacemanMulti}!`); } });
+    
+    // FIX TARGET JP: Hindari Typo Huruf Besar/Kecil
+    socket.on('set_target_jp', (data) => { 
         if (session.role === 'admin') { 
-            rtpBandar.roulette = newRtp.roulette; rtpBandar.coinflip = newRtp.coinflip; rtpBandar.spinwheel = newRtp.spinwheel;
-            rtpBandar.spaceman = newRtp.astronaut || newRtp.spaceman || 30; rtpBandar.slot = newRtp.slot || 35; 
-            io.to('admins').emit('rtp_data', { ...rtpBandar, astronaut: rtpBandar.spaceman, slot: rtpBandar.slot }); socket.emit('notif_msg', '😈 Win Rate Normal Diperbarui!');
+            let targetUser = data.username.toLowerCase().trim();
+            targetedJP[targetUser] = { gameId: data.gameId, type: data.type, multi: parseFloat(data.multi), targetWin: parseInt(data.targetWin) }; 
+            socket.emit('notif_msg', `🎯 PANEL DEWA AKTIF: Target JP dipasang untuk ${targetUser.toUpperCase()} di game ${data.gameId.toUpperCase()}!`); 
         } 
     });
 
-    socket.on('force_astro', (val) => { if (session.role === 'admin') { forceSpacemanMulti = parseFloat(val); socket.emit('notif_msg', `🚀 SUPER JP AKTIF: Spaceman berikutnya PASTI x${forceSpacemanMulti}!`); } });
-    socket.on('set_target_jp', (data) => { if (session.role === 'admin') { targetedJP[data.username] = { gameId: data.gameId, type: data.type, multi: parseFloat(data.multi), targetWin: parseInt(data.targetWin) }; socket.emit('notif_msg', `🎯 PANEL DEWA AKTIF: Target JP dipasang untuk ${data.username.toUpperCase()} di game ${data.gameId.toUpperCase()}!`); } });
-
-    // KASTA SIMBOL (Buat nentuin harga pecahan & simbol apa yang pecah)
     const slotSymbols = {
         'zeus': [ { s:'👑', max:4.0 }, { s:'⏳', max:2.5 }, { s:'💍', max:1.5 }, { s:'🛡️', max:1.0 }, { s:'💎', max:0.5 } ],
         'sweet': [ { s:'🍭', max:4.0 }, { s:'🍬', max:2.5 }, { s:'🍇', max:1.5 }, { s:'🍉', max:1.0 }, { s:'🍌', max:0.5 } ],
@@ -145,43 +92,60 @@ io.on('connection', (socket) => {
             db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [totalCost, session.userId], () => {
                 socket.emit('update_coin', user.coin - totalCost);
                 
-                let isTargeted = targetedJP[session.username] && targetedJP[session.username].gameId === gameId;
-                let tData = isTargeted ? targetedJP[session.username] : null;
+                // CEK TARGET JP (HURUF KECIL)
+                let uname = session.username.toLowerCase();
+                let isTargeted = targetedJP[uname] && targetedJP[uname].gameId === gameId;
+                let tData = isTargeted ? targetedJP[uname] : null;
+                
                 let triggerFreespin = (spinType !== 'manual') ? true : (Math.random() < 0.01);
                 
                 if (triggerFreespin || isTargeted) {
-                    // FREESPIN MODE
                     let spinsData = [];
                     let totalWin = 0;
                     let globalMulti = 0; 
                     let maxwinCap = (gameId === 'sweet') ? 25000 : 15000;
 
                     for(let i = 0; i < 15; i++) {
+                        // FIX LOGIKA MATEMATIKA TARGET MAXWIN (DI PUTARAN TERAKHIR)
                         if (isTargeted && i === 14) {
-                            let dropM = (tData.type === 'maxwin') ? 500 : tData.multi;
-                            let reqBase = (tData.type === 'maxwin') ? ((betAmount * maxwinCap) / dropM) : (tData.targetWin / dropM);
+                            let targetFinalWin = (tData.type === 'maxwin') ? (betAmount * maxwinCap) : tData.targetWin;
+                            
+                            // Kurangin dulu sama kemenangan putaran 1-14
+                            let neededWin = targetFinalWin - totalWin; 
+                            if (neededWin < 0) neededWin = 0; 
+                            
+                            // Tembak petir x1000 aja sekalian kalau maxwin biar gahar layarnya
+                            let dropM = (tData.type === 'maxwin') ? 1000 : tData.multi; 
+                            
+                            if (gameId !== 'sweet') globalMulti += dropM;
+                            
+                            let reqBase = 0;
+                            if (gameId === 'sweet') {
+                                reqBase = Math.floor(neededWin / dropM);
+                            } else {
+                                reqBase = Math.floor(neededWin / (globalMulti > 0 ? globalMulti : 1));
+                            }
+                            
                             let symList = slotSymbols[gameId];
-                            let pickedSym = symList[0].s; // Pilih mahkota buat JP
+                            let pickedSym = symList[0].s; 
                             
                             spinsData.push({ win: reqBase, multi: dropM, symbol: pickedSym });
-                            if (gameId !== 'sweet') globalMulti += dropM;
-                            totalWin += (gameId === 'sweet') ? (reqBase * dropM) : (reqBase * globalMulti);
+                            totalWin = targetFinalWin; // KUNCI MATI HASIL AKHIRNYA DI SINI
                             continue;
                         } else if (isTargeted) {
+                            // Biar gampang dan ngasih tegang, putaran 1-14 kosongin aja zonk
                             spinsData.push({ win: 0, multi: 0, symbol: null });
                             continue;
                         }
 
-                        // RNG NORMAL FREESPIN
+                        // RNG NORMAL
                         let isWinSpin = Math.random() < (rtpBandar.slot / 100);
-                        let spinWin = 0;
-                        let winSymbol = null;
+                        let spinWin = 0; let winSymbol = null;
                         
                         if (isWinSpin) {
                             let symList = slotSymbols[gameId];
                             let picked = symList[Math.floor(Math.random() * symList.length)];
                             winSymbol = picked.s;
-                            // Win dihitung dari harga kasta simbol
                             spinWin = Math.floor(betAmount * (Math.random() * (picked.max - (picked.max/2)) + (picked.max/2)));
                         }
 
@@ -195,15 +159,15 @@ io.on('connection', (socket) => {
 
                         spinsData.push({ win: spinWin, multi: dropMulti, symbol: winSymbol });
                         
-                        if (gameId === 'sweet') { totalWin += spinWin * (dropMulti > 0 ? dropMulti : 1);
-                        } else {
+                        if (gameId === 'sweet') { totalWin += spinWin * (dropMulti > 0 ? dropMulti : 1); } 
+                        else {
                             if (dropMulti > 0 && spinWin > 0) globalMulti += dropMulti; 
                             totalWin += spinWin * (globalMulti > 0 ? globalMulti : 1);
                         }
                     }
 
                     if (totalWin > betAmount * maxwinCap) totalWin = betAmount * maxwinCap;
-                    if (isTargeted) delete targetedJP[session.username];
+                    if (isTargeted) delete targetedJP[uname]; // HAPUS TARGET
 
                     db.run(`UPDATE users SET coin = coin + ? WHERE id = ?`, [totalWin, session.userId], () => {
                         db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => {
@@ -212,11 +176,8 @@ io.on('connection', (socket) => {
                     });
 
                 } else {
-                    // MANUAL SPIN
                     const isWin = Math.random() < (rtpBandar.slot / 100);
-                    let normalWin = 0;
-                    let winSymbol = null;
-                    
+                    let normalWin = 0; let winSymbol = null;
                     if (isWin) {
                         let symList = slotSymbols[gameId];
                         let picked = symList[Math.floor(Math.random() * symList.length)];
@@ -246,7 +207,6 @@ io.on('connection', (socket) => {
         });
     });
 
-    // TRANSAKSI & GAME LAIN
     socket.on('req_deposit', (a) => { db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'DEPOSIT', ?, 'PENDING')`, [session.userId, session.username, a], () => { io.to('admins').emit('admin_new_notif'); socket.emit('notif_msg', `✅ Request terkirim!`); }); });
     socket.on('req_wd', (a) => { db.get(`SELECT coin FROM users WHERE id = ?`, [session.userId], (err, u) => { if (!u || u.coin < a) return socket.emit('notif_msg', '❌ Saldo tidak cukup!'); db.run(`UPDATE users SET coin = coin - ? WHERE id = ?`, [a, session.userId], () => { db.run(`INSERT INTO transactions (user_id, username, type, amount, status) VALUES (?, ?, 'WD', ?, 'PENDING')`, [session.userId, session.username, a]); io.to(`user_${session.userId}`).emit('update_coin', u.coin - a); io.to('admins').emit('admin_new_notif'); socket.emit('notif_msg', '💸 WD Diproses!'); }); }); });
     socket.on('admin_approve_tx', (id) => { if(session.role!=='admin') return; db.get(`SELECT * FROM transactions WHERE id=? AND status='PENDING'`,[id], (err,tx)=>{ if(!tx)return; db.run(`UPDATE transactions SET status='SUCCESS' WHERE id=?`,[id]); if(tx.type==='DEPOSIT'){ db.run(`UPDATE users SET coin=coin+? WHERE id=?`,[tx.amount, tx.user_id],()=>{ db.get(`SELECT coin FROM users WHERE id=?`,[tx.user_id],(err,u)=>io.to(`user_${tx.user_id}`).emit('update_coin',u.coin)); }); } socket.emit('deposit_approved_success'); }); });
