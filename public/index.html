@@ -3,15 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>LGOLUX - Premium Casino</title>
+  <title>DANAWIN99 - Premium Casino</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
   <style>
     /* TEMA ORANYE VIP */
-    :root { 
-      --gold: #f59e0b; /* Amber/Oranye Emas */
-      --bg: #451a03;   /* Cokelat Gelap */
-      --accent: #d97706; /* Oranye Terang */
-    }
+    :root { --gold: #f59e0b; --bg: #451a03; --accent: #d97706; }
     
     body { margin: 0; background: #000; color: white; font-family: 'Plus Jakarta Sans', sans-serif; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
     .app { width: 100%; max-width: 420px; background: linear-gradient(180deg, #78350f 0%, var(--bg) 100%); display: flex; flex-direction: column; position: relative; min-height: 100vh; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
@@ -60,9 +56,17 @@
   </style>
 </head>
 <body>
+
+  <div id="mt-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; display:none; flex-direction:column; justify-content:center; align-items:center; text-align:center; backdrop-filter: blur(10px);">
+      <h1 style="color:#ef4444; font-size:35px; text-shadow:0 0 20px #ef4444; margin-bottom:10px;">🚧 MAINTENANCE 🚧</h1>
+      <p style="color:#fff; font-size:14px; max-width: 300px;">Kami sedang meningkatkan kualitas server dan game. Harap bersabar bosku!</p>
+      <p style="color:var(--gold); font-size:18px; font-weight:bold; margin-top:30px;">Estimasi Selesai:</p>
+      <div id="mt-timer" style="font-size: 50px; font-weight: 900; color: #10b981; text-shadow: 0 0 20px #10b981; font-family: monospace;">00:00:00</div>
+  </div>
+
   <div class="app">
     <div id="auth-v" class="auth">
-      <div class="auth-logo">🔥 LGOLUX</div>
+      <div class="auth-logo">🔥 DANAWIN99</div>
       
       <div id="f-login">
         <input id="l-u" placeholder="Username">
@@ -165,6 +169,8 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     let socket;
+    let mtInterval;
+
     fetch('/api/me').then(r => r.json()).then(d => { if(d.loggedIn) masuk(d); });
     function formatRupiah(obj) { let val = obj.value.replace(/[^0-9]/g, ''); obj.value = val ? parseInt(val).toLocaleString('id-ID') : ''; }
     function toggleA() { document.getElementById('f-login').classList.toggle('hidden'); document.getElementById('f-reg').classList.toggle('hidden'); }
@@ -177,7 +183,39 @@
 
     function masuk(d) {
       document.getElementById('auth-v').classList.add('hidden'); document.getElementById('main-v').classList.remove('hidden'); document.getElementById('n-u').innerText = d.username.toUpperCase(); document.getElementById('n-c').innerText = d.coin.toLocaleString('id-ID');
-      socket = io(); socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID')); socket.on('notif_msg', m => alert(m));
+      socket = io(); 
+      
+      socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID')); 
+      socket.on('notif_msg', m => alert(m));
+
+      // LISTENER SATPAM MT
+      socket.on('mt_initial_state', (status) => { handleMtWeb(status.web); });
+      socket.on('mt_web_update', (webStatus) => { handleMtWeb(webStatus); });
+    }
+
+    // FUNGSI NGITUNG TIMER MT WEB
+    function handleMtWeb(webStatus) {
+        const overlay = document.getElementById('mt-overlay');
+        if (webStatus.active && Date.now() < webStatus.until) {
+            overlay.style.display = 'flex';
+            clearInterval(mtInterval);
+            mtInterval = setInterval(() => {
+                let sisa = webStatus.until - Date.now();
+                if (sisa <= 0) {
+                    clearInterval(mtInterval);
+                    overlay.style.display = 'none'; // Auto Buka kalau waktu habis!
+                    return;
+                }
+                let hours = Math.floor((sisa / (1000 * 60 * 60)) % 24);
+                let mins = Math.floor((sisa / 1000 / 60) % 60);
+                let secs = Math.floor((sisa / 1000) % 60);
+                document.getElementById('mt-timer').innerText = 
+                    `${hours.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+            }, 1000);
+        } else {
+            overlay.style.display = 'none';
+            clearInterval(mtInterval);
+        }
     }
 
     function doD() { const a = parseInt(document.getElementById('d-a').value.replace(/\./g, '')); if(a) { socket.emit('req_deposit', a); closeM('m-depo'); document.getElementById('d-a').value=''; } }
