@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>MAHJONG WAYS 2 - SOFT LGOLUX</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --gold: #fbbf24; --bg: #7f1d1d; --panel: #450a0a; --accent: #fca5a5; }
+    body { margin: 0; background: #000; color: white; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; display: flex; justify-content: center;}
+    .game-container { width: 100%; max-width: 420px; height: 100dvh; display: flex; flex-direction: column; background: radial-gradient(circle at top, #b91c1c 0%, var(--bg) 100%); position: relative; overflow: hidden;}
+    
+    .top-bar { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%); position: absolute; top: 0; left: 0; right: 0; z-index: 10; padding-top: calc(15px + env(safe-area-inset-top, 0px)); }
+    .btn-back { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 12px;}
+    .saldo-box { background: rgba(0,0,0,0.8); border: 1px solid var(--gold); padding: 8px 18px; border-radius: 10px; font-weight: 800; color: var(--gold);}
+    
+    .screen { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-top: 50px; position: relative;}
+    
+    .multi-bar { display: flex; gap: 5px; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 20px; border: 2px solid var(--accent); margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);}
+    .multi-item { background: #7f1d1d; color: #fecaca; font-weight: 900; font-size: 14px; padding: 5px 15px; border-radius: 12px; transition: 0.3s; border: 1px solid #b91c1c;}
+    .multi-item.active { background: linear-gradient(180deg, #fde047, #b45309); color: #000; box-shadow: 0 0 15px #fbbf24; border-color: #fff; transform: scale(1.1);}
+
+    /* MAHJONG 2: Grid 5x5 */
+    .slot-grid { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 4px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 15px; border: 3px solid #b91c1c; width: 92%; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); position: relative;}
+    .slot-cell { aspect-ratio: 1; background: #450a0a; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 28px; position: relative; overflow: hidden; border: 1px solid rgba(252,165,165,0.3);}
+    
+    .simbol-item { filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5)); transition: transform 0.2s;}
+    .simbol-item.drop { animation: dropDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .turbo .simbol-item.drop { animation-duration: 0.15s; }
+    @keyframes dropDown { 0% { transform: translateY(-200%); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+    
+    .simbol-item.break { animation: popBreak 0.3s forwards; }
+    .turbo .simbol-item.break { animation-duration: 0.1s; }
+    @keyframes popBreak { 50% { transform: scale(1.3); filter: brightness(2); } 100% { transform: scale(0); opacity: 0; } }
+
+    .simbol-item.gold { background: radial-gradient(circle, #fbbf24, #b45309); border-radius: 5px; padding: 2px; border: 1px solid #fff;}
+    .simbol-item.wild { font-size: 32px; animation: pulseWild 0.5s infinite alternate;}
+    @keyframes pulseWild { 0% { transform: scale(1); filter: drop-shadow(0 0 5px #fbbf24);} 100% { transform: scale(1.1); filter: drop-shadow(0 0 15px #fde047);} }
+
+    .float-coin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; font-weight: 900; color: #10b981; text-shadow: 0 2px 5px black, 0 0 10px white; z-index: 20; opacity: 0; pointer-events: none; width: 100%; text-align: center;}
+    .float-coin.show { animation: floatUp 1s ease-out forwards; }
+    .turbo .float-coin.show { animation-duration: 0.4s; }
+    @keyframes floatUp { 0% { transform: translate(-50%, -10%); opacity: 1; } 100% { transform: translate(-50%, -100px); opacity: 0; } }
+
+    .spin-win-box { background: rgba(0,0,0,0.8); border: 2px solid var(--accent); border-radius: 15px; padding: 5px 20px; margin-top: 10px; text-align: center; display: none;}
+    .sw-label { font-size: 10px; color: #fff; font-weight: bold;}
+    .sw-val { font-size: 24px; font-weight: 900; color: var(--accent);}
+
+    .status-msg { font-size: 14px; font-weight: 900; color: #fff; z-index: 10; margin-top: 10px; background: rgba(0,0,0,0.8); padding: 8px 20px; border-radius: 30px; text-align: center; border: 1px solid var(--accent); display: none;}
+
+    .panel { background: var(--panel); padding: 15px; border-top: 3px solid var(--accent); z-index: 10; border-radius: 25px 25px 0 0; padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));}
+    .input-row { display: flex; gap: 10px; margin-bottom: 10px;}
+    .bet-box { flex: 1; background: #000; border: 1px solid #7f1d1d; border-radius: 12px; padding: 10px; display: flex; flex-direction: column;}
+    .bet-box label { font-size: 10px; color:#fecaca; font-weight: bold; margin-bottom: 2px;}
+    .bet-box input { width: 100%; border: none; background: transparent; color: white; font-size: 18px; font-weight: 900; outline: none;}
+    
+    .action-row { display: flex; gap: 8px; justify-content: space-between; align-items: stretch;}
+    
+    .btn-circle { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b91c1c; background: #000; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s;}
+    .btn-circle.active { background: var(--accent); color: #000; border-color: #fff; box-shadow: 0 0 15px var(--accent);}
+    .btn-circle.auto-on { background: var(--gold); color: #000; border-color: #fff; animation: pulseAuto 1s infinite;}
+    @keyframes pulseAuto { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    
+    .btn-spin { flex: 1; border-radius: 15px; border: none; font-weight: 900; font-size: 20px; cursor: pointer; color: #000; background: linear-gradient(180deg, #fca5a5, var(--accent)); box-shadow: 0 5px 0 #b91c1c; display: flex; align-items: center; justify-content: center;}
+    .btn-spin:active { transform: translateY(5px); box-shadow: 0 0 0 #b91c1c; }
+    
+    .disabled { filter: grayscale(1); pointer-events: none; opacity: 0.6;}
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; display: none; align-items: center; justify-content: center;}
+    .win-modal { background: radial-gradient(circle, #b91c1c, #450a0a); padding: 25px; border-radius: 20px; text-align: center; border: 3px solid var(--gold); width: 85%; max-width: 320px;}
+    .win-title { font-size: 35px !important; color: #fff !important; text-shadow: 0 5px 10px rgba(0,0,0,0.5); margin: 0;}
+    .win-amount { font-size: 40px; font-weight: 900; color: #fff; margin: 15px 0; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));}
+    .btn-yes { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--gold); color: #000; font-weight: 900; font-size: 16px; cursor: pointer;}
+    
+    .auto-modal { background: #171717; padding: 20px; border-radius: 20px; text-align: center; border: 2px solid var(--accent); width: 80%; max-width: 300px; color: white;}
+    .auto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;}
+    .btn-auto-opt { background: #450a0a; border: 1px solid #fca5a5; color: white; padding: 15px; border-radius: 10px; font-weight: bold; cursor: pointer;}
+  </style>
+</head>
+<body>
+  <div class="game-container" id="gc">
+    
+    <div id="win-modal" class="modal-overlay">
+        <div class="win-modal">
+            <h2 class="win-title">SENSASIONAL!</h2>
+            <div id="win-amount" class="win-amount">🪙 0</div>
+            <button class="btn-yes" onclick="closeWinModal()">LANJUTKAN</button>
+        </div>
+    </div>
+
+    <div id="auto-modal" class="modal-overlay">
+        <div class="auto-modal">
+            <h3 style="margin-top:0;">PILIH AUTO SPIN</h3>
+            <div class="auto-grid">
+                <button class="btn-auto-opt" onclick="startAuto(10)">10 Putaran</button>
+                <button class="btn-auto-opt" onclick="startAuto(30)">30 Putaran</button>
+                <button class="btn-auto-opt" onclick="startAuto(50)">50 Putaran</button>
+                <button class="btn-auto-opt" onclick="startAuto(100)">100 Putaran</button>
+            </div>
+            <button class="btn-yes" style="margin-top:15px; background:#ef4444; color:white;" onclick="closeAutoModal()">BATAL</button>
+        </div>
+    </div>
+
+    <div class="top-bar">
+      <a href="/" class="btn-back">🔙 LOBI</a>
+      <div class="saldo-box">🪙 <span id="n-c">0</span></div>
+    </div>
+    
+    <div class="screen">
+      <div class="multi-bar" id="m-bar">
+          <div class="multi-item active" id="m-1">x1</div><div class="multi-item" id="m-2">x2</div>
+          <div class="multi-item" id="m-3">x3</div><div class="multi-item" id="m-5">x5</div>
+      </div>
+
+      <div class="slot-grid" id="grid"><div id="float-coin" class="float-coin">+ 🪙 0</div></div>
+      
+      <div id="spin-win-box" class="spin-win-box">
+          <div class="sw-label">KEMENANGAN SPIN INI</div>
+          <div id="spin-win-val" class="sw-val">🪙 0</div>
+      </div>
+      <div id="status-msg" class="status-msg">MEMUTAR...</div>
+    </div>
+
+    <div class="panel" id="bet-panel">
+      <div class="input-row">
+        <div class="bet-box">
+            <label>BET AMOUNT</label>
+            <input type="text" id="bet-input" value="400" oninput="formatRupiah(this)">
+        </div>
+      </div>
+      <div class="action-row">
+          <div class="btn-circle" id="btn-turbo" onclick="toggleTurbo()">⚡</div>
+          <button class="btn-spin" onclick="playSlot('manual')">🔄 SPIN</button>
+          
+          <div class="btn-circle" id="btn-auto" onclick="openAutoModal()">♾️</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket;
+    const symbols = ['🀄', '🐉', '🀅', '🎋', '🪙']; 
+    let isTurbo = false, isFreespinMode = false;
+    
+    // VARIABEL AUTO SPIN
+    let autoSpinsLeft = 0;
+    let isAutoMode = false;
+
+    fetch('/api/me').then(r => r.json()).then(d => { if(!d.loggedIn) window.location.href = '/'; else masuk(d); });
+    function formatRupiah(obj) { let val = obj.value.replace(/[^0-9]/g, ''); obj.value = val ? parseInt(val).toLocaleString('id-ID') : ''; }
+    
+    function initGrid() { const grid = document.getElementById('grid'); grid.innerHTML = '<div id="float-coin" class="float-coin">+ 🪙 0</div>'; for(let i=0; i<25; i++) grid.innerHTML += `<div class="slot-cell" id="c-${i}"><div class="simbol-item drop">?</div></div>`; }
+    initGrid();
+
+    function toggleTurbo() {
+        isTurbo = !isTurbo;
+        document.getElementById('btn-turbo').classList.toggle('active');
+        document.getElementById('gc').classList.toggle('turbo');
+    }
+
+    // FUNGSI AUTO SPIN
+    function openAutoModal() {
+        if(isAutoMode) { // Kalau lagi auto terus dipencet, berarti STOP
+            autoSpinsLeft = 0; isAutoMode = false;
+            document.getElementById('btn-auto').classList.remove('auto-on');
+            document.getElementById('status-msg').innerText = 'AUTO SPIN BERHENTI';
+        } else {
+            document.getElementById('auto-modal').style.display = 'flex';
+        }
+    }
+    function closeAutoModal() { document.getElementById('auto-modal').style.display = 'none'; }
+    function startAuto(count) {
+        autoSpinsLeft = count; isAutoMode = true;
+        closeAutoModal();
+        document.getElementById('btn-auto').classList.add('auto-on');
+        playSlot('manual');
+    }
+
+    function updateMultiBar(step, isFS) {
+        ['m-1','m-2','m-3','m-5'].forEach(id => document.getElementById(id).classList.remove('active'));
+        if(isFS) { document.getElementById('m-1').innerText='x2'; document.getElementById('m-2').innerText='x4'; document.getElementById('m-3').innerText='x6'; document.getElementById('m-5').innerText='x10'; }
+        else { document.getElementById('m-1').innerText='x1'; document.getElementById('m-2').innerText='x2'; document.getElementById('m-3').innerText='x3'; document.getElementById('m-5').innerText='x5'; }
+
+        if(step === 0) document.getElementById('m-1').classList.add('active');
+        else if(step === 1) document.getElementById('m-2').classList.add('active');
+        else if(step === 2) document.getElementById('m-3').classList.add('active');
+        else document.getElementById('m-5').classList.add('active');
+    }
+
+    function showWinModal(amount) { document.getElementById('win-amount').innerText = `🪙 ${amount.toLocaleString('id-ID')}`; document.getElementById('win-modal').style.display = 'flex'; }
+    function closeWinModal() { 
+        document.getElementById('win-modal').style.display = 'none'; 
+        document.getElementById('bet-panel').classList.remove('disabled'); 
+        document.getElementById('gc').style.background = 'radial-gradient(circle at top, #b91c1c 0%, var(--bg) 100%)'; 
+        document.getElementById('status-msg').style.display = 'none'; 
+        updateMultiBar(0, false); 
+        
+        // Cek kalau masih auto spin setelah Freespin beres
+        if(isAutoMode && autoSpinsLeft > 0) { setTimeout(() => playSlot('manual'), 1000); }
+    }
+
+    function masuk(d) {
+      document.getElementById('n-c').innerText = d.coin.toLocaleString('id-ID'); socket = io();
+      socket.on('update_coin', c => document.getElementById('n-c').innerText = c.toLocaleString('id-ID'));
+      socket.on('game_result', r => { if(r.status === 'error') { alert(r.msg); document.getElementById('bet-panel').classList.remove('disabled'); document.getElementById('status-msg').style.display = 'none'; isAutoMode = false; document.getElementById('btn-auto').classList.remove('auto-on'); } });
+      
+      socket.on('slot_normal_result', (data) => {
+          isFreespinMode = false;
+          executeTumble(data, false, () => {
+              let msgBox = document.getElementById('status-msg');
+              if(data.status === 'win') { msgBox.innerText = `🎉 MENANG: 🪙 ${data.winAmount.toLocaleString('id-ID')}`; msgBox.style.color = '#10b981'; msgBox.style.display = 'block'; }
+              
+              setTimeout(() => { 
+                  msgBox.style.display = 'none'; 
+                  document.getElementById('bet-panel').classList.remove('disabled'); 
+                  
+                  // LOGIKA NEXT AUTO SPIN
+                  if(isAutoMode && autoSpinsLeft > 0) {
+                      autoSpinsLeft--;
+                      document.getElementById('status-msg').innerText = `AUTO SPIN: ${autoSpinsLeft} TERSISA`;
+                      document.getElementById('status-msg').style.display = 'block';
+                      document.getElementById('status-msg').style.color = '#fde047';
+                      if(autoSpinsLeft === 0) {
+                          isAutoMode = false; document.getElementById('btn-auto').classList.remove('auto-on');
+                      } else {
+                          setTimeout(() => playSlot('manual'), isTurbo ? 200 : 500);
+                      }
+                  }
+              }, isTurbo ? 300 : 800);
+          });
+      });
+
+      socket.on('slot_freespin_start', async (data) => {
+          isFreespinMode = true; document.getElementById('gc').style.background = 'radial-gradient(circle at top, #f59e0b 0%, #7f1d1d 100%)'; 
+          if(data.isMurni) {
+              document.getElementById('status-msg').innerText = '🔴 SCATTER DIDAPATKAN!'; document.getElementById('status-msg').style.display = 'block';
+              for(let i=0; i<25; i++) { let cell = document.getElementById(`c-${i}`); cell.innerHTML = `<div class="simbol-item drop">${symbols[Math.floor(Math.random() * symbols.length)]}</div>`; }
+              let sIdx = [2, 12, 22]; sIdx.forEach(idx => { document.getElementById(`c-${idx}`).innerHTML = `<div class="simbol-item drop" style="font-size:40px">🔴</div>`; });
+              await new Promise(r => setTimeout(r, 2000));
+          }
+          let spinArray = data.spins; let maxRounds = data.totalRounds || 12;
+          const runSpins = async () => {
+              for(let i=0; i<maxRounds; i++) { document.getElementById('status-msg').innerText = `🔥 FREESPIN: ${maxRounds - i} TERSISA`; document.getElementById('status-msg').style.display = 'block'; await new Promise(resolve => executeTumble(spinArray[i], true, resolve)); }
+              setTimeout(() => { document.getElementById('n-c').innerText = data.finalCoin.toLocaleString('id-ID'); showWinModal(data.finalWin); isFreespinMode = false; }, 1000);
+          }; runSpins();
+      });
+    }
+
+    function executeTumble(data, isFreespin, callback) {
+        let winSym = data.symbol; let winAmt = data.winAmount || data.win; let tumbles = data.tumbles || 0; let spinWinAcc = 0;
+        let tDelay = isTurbo ? 200 : 500; 
+        document.getElementById('spin-win-box').style.display = 'none'; document.getElementById('spin-win-val').style.color = '#10b981';
+        updateMultiBar(0, isFreespin);
+
+        for(let i=0; i<25; i++) { let isGold = Math.random() < 0.2 ? 'gold' : ''; document.getElementById(`c-${i}`).innerHTML = `<div class="simbol-item drop ${isGold}">${symbols[Math.floor(Math.random() * symbols.length)]}</div>`; }
+        document.getElementById('float-coin').classList.remove('show');
+
+        if (winAmt === 0) { setTimeout(callback, tDelay + 200); return; }
+
+        let currentTumble = 0; let winPerTumble = Math.floor(winAmt / tumbles); 
+
+        const runTumble = () => {
+            if (currentTumble >= tumbles) { setTimeout(callback, tDelay + 200); return; }
+
+            setTimeout(() => {
+                updateMultiBar(currentTumble, isFreespin); 
+                let breakIndices = [];
+                let baseCols = [1, 2, 3]; baseCols.forEach(col => { let row = Math.floor(Math.random() * 5); let idx = (row * 5) + col; breakIndices.push(idx); });
+                while(breakIndices.length < 6) { let r = Math.floor(Math.random() * 25); if(!breakIndices.includes(r)) breakIndices.push(r); }
+                
+                for(let i=0; i<25; i++) { if (breakIndices.includes(i)) document.getElementById(`c-${i}`).innerHTML = `<div class="simbol-item break">${winSym}</div>`; }
+
+                setTimeout(() => {
+                    let floatC = document.getElementById('float-coin'); floatC.innerText = `+ 🪙 ${winPerTumble.toLocaleString('id-ID')}`; floatC.classList.remove('show'); void floatC.offsetWidth; floatC.classList.add('show');
+                    spinWinAcc += winPerTumble; document.getElementById('spin-win-box').style.display = 'block'; document.getElementById('spin-win-val').innerText = '🪙 ' + spinWinAcc.toLocaleString('id-ID');
+                    
+                    setTimeout(() => {
+                        for(let i=0; i<25; i++) { if (breakIndices.includes(i)) { let jadiWild = Math.random() < 0.4; if(jadiWild) { document.getElementById(`c-${i}`).innerHTML = `<div class="simbol-item drop wild">🟨</div>`; } else { document.getElementById(`c-${i}`).innerHTML = `<div class="simbol-item drop">${symbols[Math.floor(Math.random() * symbols.length)]}</div>`; } } }
+                        currentTumble++; runTumble(); 
+                    }, tDelay - 100);
+                }, tDelay / 2); 
+            }, tDelay); 
+        }; runTumble(); 
+    }
+
+    function playSlot(type) {
+        let b = parseInt(document.getElementById('bet-input').value.replace(/\./g, ''));
+        if(!b || b <= 0) { isAutoMode = false; document.getElementById('btn-auto').classList.remove('auto-on'); return alert("Isi bet bosku!"); }
+        
+        document.getElementById('bet-panel').classList.add('disabled'); 
+        if(!isAutoMode) { document.getElementById('status-msg').style.display = 'block'; document.getElementById('status-msg').innerText = '🔄 MEMUTAR...'; document.getElementById('status-msg').style.color = '#fff'; }
+        
+        document.getElementById('spin-win-box').style.display = 'none'; updateMultiBar(0, false);
+        socket.emit('play_video_slot', { betAmount: b, spinType: type, gameId: 'mahjong2' }); 
+    }
+  </script>
+</body>
+</html>
