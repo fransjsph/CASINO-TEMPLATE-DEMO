@@ -4,107 +4,127 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>LGOLUX - EXECUTIVE ADMIN</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap" rel="stylesheet">
   <style>
-    body { font-family:'Plus Jakarta Sans'; background:#0f172a; color:#f8fafc; padding:20px; margin:0; }
-    .card { background:#1e293b; padding:20px; border-radius:15px; border:1px solid #334155; margin-bottom:20px; overflow-x:auto; }
-    h3 { color:#10b981; margin-top:0; }
+    /* TEMA ORANYE VIP ADMIN */
+    :root { --gold: #f59e0b; --bg: #451a03; --panel: #281105; --accent: #d97706; }
+    
+    body { font-family:'Plus Jakarta Sans', sans-serif; background: linear-gradient(135deg, #000 0%, var(--bg) 100%); color:#f8fafc; padding:20px; margin:0; min-height: 100vh;}
+    
+    .card { background: rgba(0,0,0,0.7); padding:25px; border-radius:20px; border:1px solid var(--accent); margin-bottom:20px; overflow-x:auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px);}
+    
+    h2, h3, h4 { color: var(--gold); margin-top:0; text-transform: uppercase; letter-spacing: 1px;}
+    
     table { width:100%; border-collapse:collapse; font-size:12px; min-width: 400px; }
-    td, th { padding:10px; border-bottom:1px solid #334155; text-align:left; }
-    input, select { background:#0f172a; border:1px solid #334155; color:#fff; padding:12px; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom: 15px; outline:none; font-weight:bold; }
-    button { background:#10b981; color:#000; border:none; padding:12px; border-radius:8px; font-weight:800; cursor:pointer; width: 100%; }
-    .btn-red { background: #ef4444; color: white; }
-    .modal { position:fixed; inset:0; background:rgba(0,0,0,0.8); display:flex; justify-content:center; align-items:center; z-index: 1000; padding: 20px;}
-    .modal-box { background:#1e293b; padding:25px; border-radius:20px; width:100%; max-width:400px; border:1px solid #10b981; box-sizing: border-box;}
+    td, th { padding:12px; border-bottom:1px solid #78350f; text-align:left; }
+    th { color: var(--gold); font-weight: 900; background: rgba(245,158,11,0.1); border-radius: 5px;}
+    
+    input, select { background: rgba(0,0,0,0.8); border:1px solid #9a3412; color:#fff; padding:12px; border-radius:10px; width:100%; box-sizing:border-box; margin-bottom: 15px; outline:none; font-weight:bold; transition: 0.3s; }
+    input:focus, select:focus { border-color: var(--gold); box-shadow: 0 0 10px rgba(245,158,11,0.4); background: rgba(0,0,0,0.9);}
+    
+    button { background: linear-gradient(180deg, #fcd34d, var(--gold)); color:#000; border:none; padding:12px; border-radius:10px; font-weight:900; cursor:pointer; width: 100%; transition: 0.2s; box-shadow: 0 5px 15px rgba(245,158,11,0.3);}
+    button:active { transform: translateY(3px); box-shadow: none; }
+    
+    .btn-red { background: linear-gradient(180deg, #ef4444, #991b1b); color: white; box-shadow: 0 5px 15px rgba(239,68,68,0.3);}
+    .btn-blue { background: linear-gradient(180deg, #3b82f6, #1e3a8a); color: white; box-shadow: 0 5px 15px rgba(59,130,246,0.3);}
+    .btn-purple { background: linear-gradient(180deg, #d8b4fe, #a855f7); color: white; box-shadow: 0 5px 15px rgba(168,85,247,0.3);}
+    .btn-green { background: linear-gradient(180deg, #34d399, #059669); color: #000; box-shadow: 0 5px 15px rgba(16,185,129,0.3);}
+    
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; justify-content:center; align-items:center; z-index: 1000; padding: 20px; backdrop-filter: blur(5px);}
+    .modal-box { background: linear-gradient(180deg, #451a03, #000); padding:25px; border-radius:20px; width:100%; max-width:400px; border:2px solid var(--gold); box-sizing: border-box; box-shadow: 0 0 30px rgba(245,158,11,0.3);}
+    
     .hidden { display:none !important; }
     .grid-layout { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    
+    /* STYLE KHUSUS MT BOX */
+    .mt-box { display:flex; flex-direction: column; gap:10px; margin-bottom:15px; }
+    .mt-chk-label { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 10px; border: 1px solid var(--accent); cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.3s;}
+    .mt-chk-label:hover { background: rgba(245,158,11,0.2); }
+    .mt-chk-label input { width: 18px; height: 18px; margin: 0; accent-color: var(--gold); cursor: pointer;}
+    
     @media (max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } body { padding: 15px; } }
   </style>
 </head>
 <body>
 
-  <div id="login-view" class="card hidden" style="max-width: 400px; margin: 50px auto; text-align: center;">
-    <h2 style="color:#10b981; margin-top:0;">🛡️ ADMIN LOGIN</h2>
+  <div id="login-view" class="card hidden" style="max-width: 400px; margin: 10vh auto; text-align: center; border-color: var(--gold); box-shadow: 0 0 50px rgba(245,158,11,0.2);">
+    <h2 style="font-size: 28px;">🔥 EXECUTIVE ADMIN</h2>
+    <p style="color:#aaa; font-size:12px; margin-top:-10px; margin-bottom:25px;">Portal Otentikasi Khusus Bandar</p>
     <input type="text" id="l-u" placeholder="Admin Username">
     <input type="password" id="l-p" placeholder="Admin Password">
-    <button onclick="login()">OTORISASI MASUK</button>
+    <button onclick="login()" style="margin-top:10px;">OTORISASI MASUK</button>
   </div>
 
   <div id="dash-view" class="hidden">
-    <div style="display: flex; justify-content: space-between; align-items: center; background:#1e293b; padding: 15px 20px; border-radius: 15px; margin-bottom: 20px;">
-      <h2 style="margin:0; font-size: 18px;">💼 ADMIN PANEL</h2>
-      <button onclick="logout()" class="btn-red" style="width: auto; padding: 8px 15px;">LOGOUT</button>
+    <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; margin-bottom: 20px; border-color: var(--gold);">
+      <h2 style="margin:0; font-size: 22px;">💼 EXECUTIVE PANEL</h2>
+      <button onclick="logout()" class="btn-red" style="width: auto; padding: 8px 20px; font-size:12px;">LOGOUT</button>
     </div>
     
     <div class="grid-layout">
-      <div class="card">
-        <h3>🔔 Antrean Transaksi</h3>
-        <table>
-          <thead><tr><th>User</th><th>Tipe</th><th>Nominal</th><th>Aksi</th></tr></thead>
-          <tbody id="tx-list"></tbody>
-        </table>
+        
+      <div class="card" style="border-color:var(--gold); box-shadow: inset 0 0 20px rgba(245,158,11,0.1);">
+        <h3>🛠️ SISTEM MAINTENANCE (MT)</h3>
+        <p style="font-size:11px; color:#aaa; margin-top:-5px; margin-bottom:15px;">Kunci web otomatis atau tutup akses ke provider game tertentu.</p>
+        
+        <label style="font-size: 11px; color: var(--gold);">MT Seluruh Website (Auto Buka):</label>
+        <select id="mt-web-timer">
+            <option value="0">🟢 NORMAL (TIDAK ADA MT)</option>
+            <option value="30">🔴 MT 30 Menit</option>
+            <option value="60">🔴 MT 1 Jam</option>
+            <option value="360">🔴 MT 6 Jam</option>
+            <option value="1440">🔴 MT 24 Jam</option>
+        </select>
+        <button onclick="setMtWeb()">⏳ TERAPKAN MT WEB</button>
+
+        <hr style="border:0; border-bottom: 1px dashed var(--accent); margin: 20px 0;">
+
+        <label style="font-size: 11px; color: var(--gold); display:block; margin-bottom:8px;">Akses Provider Game (Centang = Buka, Kosong = MT):</label>
+        <div class="mt-box">
+            <label class="mt-chk-label"><input type="checkbox" id="mt-prov-play" checked> 🎮 PLAY LGOLUX (Zeus, Princess, Sweet)</label>
+            <label class="mt-chk-label"><input type="checkbox" id="mt-prov-soft" checked> 🀄 SOFT LGOLUX (Mahjong, Qilin)</label>
+            <label class="mt-chk-label"><input type="checkbox" id="mt-prov-casino" checked> 🃏 CASINO (Spaceman, Baccarat, dll)</label>
+        </div>
+        <button class="btn-blue" onclick="setMtProvider()">🔒 UPDATE AKSES PROVIDER</button>
       </div>
 
-      <div class="card" style="border-color:#ef4444;">
-        <h3 style="color:#ef4444">🎛️ RTP Control Bandar</h3>
+      <div class="card" style="border-color:#a855f7; box-shadow: inset 0 0 20px rgba(168,85,247,0.1);">
+        <h3 style="color:#c084fc;">🎯 PANEL DEWA (Target JP Slot)</h3>
+        <p style="font-size:11px; color:#aaa; margin-top:-5px; margin-bottom:15px;">Targetkan kemenangan pasti (Maxwin / Nominal Custom) ke member spesifik.</p>
         
-        <label style="font-size: 12px; color: #888;">Slot Gacor Win Rate (%)</label>
-        <input type="number" id="r-slot" style="border-color: #ef4444;">
-        
-        <label style="font-size: 12px; color: #888;">Roulette Win Rate (%)</label>
-        <input type="number" id="r-r">
-        
-        <label style="font-size: 12px; color: #888;">Coinflip Win Rate (%)</label>
-        <input type="number" id="r-c">
-        
-        <label style="font-size: 12px; color: #888;">SpinWheel Multiplier Rate (%)</label>
-        <input type="number" id="r-s">
-        
-        <label style="font-size: 12px; color: #888;">Astronaut Win Rate (%)</label>
-        <input type="number" id="r-a">
-        
-        <button class="btn-red" onclick="saveRTP()" style="margin-bottom: 20px;">UPDATE WIN RATE</button>
-
-        <hr style="border:0; border-bottom: 1px dashed #ef4444; margin: 15px 0;">
-        <h4 style="color:#ef4444; margin-top:0; margin-bottom:5px;">🚀 Force Multiplier Astronaut (1x Jalan)</h4>
-        <p style="font-size:11px; color:#888; margin-top:0;">Isi angka (contoh: 5000) agar ronde berikutnya pasti JP segitu.</p>
-        <input type="number" id="f-astro" placeholder="Contoh: 5000" style="background:#0f172a; border:1px solid #ef4444; color:#fff; padding:12px; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom: 10px;">
-        <button style="background:#ef4444; color: white;" onclick="forceAstro()">🚀 TEMBAK ROKET (1X)</button>
-      </div>
-
-      <div class="card" style="border-color:#a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.3);">
-        <h3 style="color:#a855f7; margin-bottom: 5px;">🎯 PANEL DEWA (Target JP Slot)</h3>
-        <p style="font-size:10px; color:#888; margin-top:0;">Pilih member dan setting kemenangan mereka.</p>
-        
-        <label style="font-size: 11px; color: #fff;">Username Target:</label>
+        <label style="font-size: 11px; color: #c084fc;">Username Target:</label>
         <input type="text" id="jp-user" placeholder="Ketik persis nama user" style="border-color: #a855f7;">
         
-        <label style="font-size: 11px; color: #fff;">Pilih Game Slot:</label>
-        <select id="jp-game" onchange="toggleJpSettings()" style="background:#0f172a; border:1px solid #a855f7; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
-            <option value="sweet">SWEET 1000 (Max x25.000)</option>
-            <option value="zeus">LGOLUX GATES (Max x15.000)</option>
-            <option value="princess">PRINCESS (Max x15.000)</option>
+        <label style="font-size: 11px; color: #c084fc;">Pilih Game Slot:</label>
+        <select id="jp-game" onchange="toggleJpSettings()" style="border-color: #a855f7;">
+            <option value="sweet">🍬 SWEET 1000 (Max x25.000)</option>
+            <option value="zeus">⚡ LGOLUX GATES (Max x15.000)</option>
+            <option value="princess">👸 PRINCESS (Max x15.000)</option>
             <option value="zeus_super">🔥 ZEUS SUPER SCATTER (Max x50.000)</option>
             <option value="princess_super">🔥 PRINCESS SUPER SCATTER (Max x50.000)</option>
+            <option value="mahjong1">🀄 MAHJONG WAYS 1 (Max x25.000)</option>
+            <option value="mahjong2">🐉 MAHJONG WAYS 2 (Max x100.000)</option>
+            <option value="qilin">🐲 WAYS OF THE QILIN (Max x8.000)</option>
         </select>
 
-        <label style="font-size: 11px; color: #fff;">Jenis Tembakan:</label>
-        <select id="jp-type" onchange="toggleJpSettings()" style="background:#0f172a; border:1px solid #a855f7; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
-            <option value="custom">Set Multiplier & Nominal Menang</option>
+        <label style="font-size: 11px; color: #c084fc;">Jenis Tembakan:</label>
+        <select id="jp-type" onchange="toggleJpSettings()" style="border-color: #a855f7;">
+            <option value="custom">🛠️ Set Multiplier & Nominal Menang</option>
             <option value="maxwin">🔥 TEMBAK MAXWIN MENTOK!</option>
         </select>
 
         <div id="super-maxwin-box" style="display: none;">
-            <label style="font-size: 11px; color: #fde047;">Mode Maxwin (Khusus Super):</label>
-            <select id="jp-super-mode" style="background:#0f172a; border:1px solid #fde047; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
+            <label style="font-size: 11px; color: var(--gold);">Mode Maxwin (Khusus Game Super):</label>
+            <select id="jp-super-mode" style="border-color: var(--gold);">
                 <option value="instant">⚡ 4 Super Scatter Langsung (Instan)</option>
                 <option value="freespin">🎰 Lewat Freespin Biasa (Nyicil Natural)</option>
             </select>
         </div>
 
         <div id="jp-custom-box">
-            <label style="font-size: 11px; color: #fff;">Pilih Bom Multiplier Terakhir:</label>
-            <select id="jp-multi" style="background:#0f172a; border:1px solid #a855f7; color:#fff; padding:12px; border-radius:8px; width:100%; margin-bottom: 15px;">
+            <label style="font-size: 11px; color: #c084fc;">Pilih Bom Multiplier Terakhir:</label>
+            <select id="jp-multi" style="border-color: #a855f7;">
+                <option value="10">Bom x10 (Khusus PG Soft)</option>
                 <option value="50">Bom x50</option>
                 <option value="100">Bom x100</option>
                 <option value="250">Bom x250</option>
@@ -112,24 +132,67 @@
                 <option value="1000">Petir x1000 (Sweet Only)</option>
             </select>
             
-            <label style="font-size: 11px; color: #fff;">Target Total Menang (Koin):</label>
+            <label style="font-size: 11px; color: #c084fc;">Target Total Menang (Koin):</label>
             <input type="number" id="jp-win" placeholder="Contoh: 5000000" style="border-color: #a855f7;">
         </div>
 
-        <button style="background: linear-gradient(180deg, #d8b4fe, #a855f7); color: white; border: 2px solid #fff; box-shadow: 0 5px 15px rgba(168,85,247,0.6);" onclick="setTargetJP()">⚡ KIRIM KUTUKAN JP</button>
+        <button class="btn-purple" onclick="setTargetJP()">⚡ KIRIM KUTUKAN JP</button>
+      </div>
+
+      <div class="card" style="border-color:#ef4444; box-shadow: inset 0 0 20px rgba(239,68,68,0.1);">
+        <h3 style="color:#fca5a5">🎛️ RTP & ROKET BANDAR</h3>
+        <p style="font-size:11px; color:#aaa; margin-top:-5px; margin-bottom:15px;">Kontrol tingkat kemenangan global untuk member.</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <label style="font-size: 11px; color: #fca5a5;">Slot Gacor Win Rate (%)</label>
+                <input type="number" id="r-slot" style="border-color: #ef4444;">
+            </div>
+            <div>
+                <label style="font-size: 11px; color: #fca5a5;">Roulette Win Rate (%)</label>
+                <input type="number" id="r-r" style="border-color: #ef4444;">
+            </div>
+            <div>
+                <label style="font-size: 11px; color: #fca5a5;">Coinflip Win Rate (%)</label>
+                <input type="number" id="r-c" style="border-color: #ef4444;">
+            </div>
+            <div>
+                <label style="font-size: 11px; color: #fca5a5;">SpinWheel Multi Rate (%)</label>
+                <input type="number" id="r-s" style="border-color: #ef4444;">
+            </div>
+        </div>
+        
+        <label style="font-size: 11px; color: #fca5a5;">Astronaut Win Rate (%)</label>
+        <input type="number" id="r-a" style="border-color: #ef4444;">
+        
+        <button class="btn-red" onclick="saveRTP()" style="margin-bottom: 20px;">UPDATE WIN RATE</button>
+
+        <hr style="border:0; border-bottom: 1px dashed #ef4444; margin: 15px 0;">
+        <h4 style="color:#fca5a5; margin-bottom:5px;">🚀 Force Multiplier Astronaut (1x)</h4>
+        <p style="font-size:10px; color:#aaa; margin-top:0;">Isi angka (contoh: 5000) agar ronde berikutnya pasti JP segitu.</p>
+        <input type="number" id="f-astro" placeholder="Cth: 5000" style="border-color: #ef4444;">
+        <button class="btn-red" onclick="forceAstro()">🚀 TEMBAK ROKET (1X)</button>
       </div>
 
       <div class="card">
-        <h3>➕ Buat Akun Member Manual</h3>
-        <label style="font-size: 12px; color: #888;">Username Baru:</label>
+        <h3>🔔 ANTREAN TRANSAKSI</h3>
+        <table>
+          <thead><tr><th>User</th><th>Tipe</th><th>Nominal</th><th>Aksi</th></tr></thead>
+          <tbody id="tx-list"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>➕ BUAT AKUN MANUAL</h3>
+        <label style="font-size: 11px; color: var(--gold);">Username Baru:</label>
         <input type="text" id="new-mem-user" placeholder="Ketik Username">
-        <label style="font-size: 12px; color: #888;">Password Baru:</label>
+        <label style="font-size: 11px; color: var(--gold);">Password Baru:</label>
         <input type="text" id="new-mem-pass" placeholder="Ketik Password (Cth: player123)">
         <button onclick="createMember()">DAFTARKAN MEMBER</button>
       </div>
 
       <div class="card" style="grid-column: 1/-1">
-        <h3>👥 Manajemen Member</h3>
+        <h3>👥 MANAJEMEN MEMBER</h3>
         <div style="overflow-x:auto;">
           <table>
             <thead><tr><th>User</th><th>Saldo</th><th>Status</th><th>Aksi</th></tr></thead>
@@ -142,33 +205,33 @@
 
   <div id="m-edit" class="modal hidden">
     <div class="modal-box">
-      <h3 style="margin-bottom: 5px;">⚙️ Manage: <span id="e-n" style="color: #10b981;"></span></h3>
-      <p style="margin-top:0; color:#888; font-size:13px; margin-bottom: 20px;">Saldo Saat Ini: <b id="curr-coin" style="color:#d4af37; font-size: 16px;">🪙 0</b></p>
+      <h3 style="margin-bottom: 5px;">⚙️ Manage: <span id="e-n" style="color: #34d399;"></span></h3>
+      <p style="margin-top:0; color:#aaa; font-size:12px; margin-bottom: 20px;">Saldo Saat Ini: <b id="curr-coin" style="color:var(--gold); font-size: 16px;">🪙 0</b></p>
       
-      <label style="font-size: 12px; color: #888;">Nominal Adjustment Saldo:</label>
+      <label style="font-size: 11px; color: var(--gold);">Nominal Adjustment Saldo:</label>
       <input type="text" id="e-adj" placeholder="Nominal Angka (Cth: 50.000)" oninput="formatRupiah(this)">
       
-      <label style="font-size: 12px; color: #ef4444; font-weight:bold;">Keterangan / Alasan Adjustment (WAJIB):</label>
-      <input type="text" id="e-note" placeholder="Misal: Bonus JP / Tarik Saldo Penipu">
+      <label style="font-size: 11px; color: #ef4444; font-weight:bold;">Keterangan / Alasan Adjustment (WAJIB):</label>
+      <input type="text" id="e-note" placeholder="Misal: Bonus JP / Tarik Saldo Penipu" style="border-color: #ef4444;">
       
-      <div style="display:flex; gap:10px; margin-bottom: 15px;">
-          <button onclick="saveU('add')" style="background:#10b981; color:#000; padding:10px;">➕ TAMBAHKAN</button>
-          <button onclick="saveU('sub')" style="background:#ef4444; color:#fff; padding:10px;">➖ KURANGKAN</button>
+      <div style="display:flex; gap:10px; margin-bottom: 20px;">
+          <button onclick="saveU('add')" class="btn-green">➕ TAMBAH</button>
+          <button onclick="saveU('sub')" class="btn-red">➖ TARIK</button>
       </div>
 
-      <hr style="border:0; border-bottom: 1px solid #334155; margin-bottom: 15px;">
+      <hr style="border:0; border-bottom: 1px solid #78350f; margin-bottom: 15px;">
       
-      <label style="font-size: 12px; color: #888;">Ganti Password (Opsional):</label>
+      <label style="font-size: 11px; color: var(--gold);">Ganti Password (Opsional):</label>
       <input type="text" id="e-p" placeholder="Kosongkan jika tidak ganti">
       
-      <label style="font-size: 12px; color: #888;">Status Akun:</label>
+      <label style="font-size: 11px; color: var(--gold);">Status Akun:</label>
       <select id="e-s">
         <option value="AKTIF">AKTIF (Bisa Main)</option>
         <option value="BLOKIR">BLOKIR (Banned)</option>
       </select>
       
-      <button onclick="saveU('none')" style="background:#3b82f6; color:#fff; margin-top: 5px;">💾 SIMPAN STATUS/PW (TANPA SALDO)</button>
-      <button onclick="closeM()" style="background:none; color:#ef4444; border:1px solid #ef4444; margin-top:10px">BATAL</button>
+      <button onclick="saveU('none')" class="btn-blue" style="margin-top: 5px;">💾 SIMPAN STATUS/PW</button>
+      <button onclick="closeM()" style="background:none; color:#ef4444; border:1px solid #ef4444; margin-top:10px; box-shadow:none;">BATAL</button>
     </div>
   </div>
 
@@ -196,16 +259,27 @@
     function masukAdmin() {
       document.getElementById('login-view').classList.add('hidden'); document.getElementById('dash-view').classList.remove('hidden');
       socket = io(); loadU(); socket.emit('get_pending_deposits'); socket.emit('get_rtp');
+      
+      socket.emit('get_mt_status');
+
       socket.on('admin_deposit_list', d => {
-        let h = ''; d.forEach(x => { h += `<tr><td>${x.username.toUpperCase()}</td><td><b style="color:${x.type=='DEPOSIT'?'#10b981':'#ef4444'}">${x.type}</b></td><td>${x.amount.toLocaleString('id-ID')}</td><td><div style="display:flex; gap:5px;"><button onclick="approve(${x.id}, '${x.type}')" style="padding:5px; font-size:10px;">ACC</button><button onclick="reject(${x.id})" class="btn-red" style="padding:5px; font-size:10px;">TOLAK</button></div></td></tr>`; });
+        let h = ''; d.forEach(x => { h += `<tr><td>${x.username.toUpperCase()}</td><td><b style="color:${x.type=='DEPOSIT'?'#34d399':'#ef4444'}">${x.type}</b></td><td>${x.amount.toLocaleString('id-ID')}</td><td><div style="display:flex; gap:5px;"><button onclick="approve(${x.id}, '${x.type}')" class="btn-green" style="padding:5px; font-size:10px;">ACC</button><button onclick="reject(${x.id})" class="btn-red" style="padding:5px; font-size:10px;">TOLAK</button></div></td></tr>`; });
         document.getElementById('tx-list').innerHTML = h || '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Antrean Kosong</td></tr>';
       });
+      
       socket.on('rtp_data', d => { document.getElementById('r-r').value=d.roulette; document.getElementById('r-c').value=d.coinflip; document.getElementById('r-s').value=d.spinwheel; document.getElementById('r-a').value=d.astronaut || 30; document.getElementById('r-slot').value=d.slot || 35; });
+      
+      socket.on('mt_status_data', data => {
+          document.getElementById('mt-prov-play').checked = !data.play;
+          document.getElementById('mt-prov-soft').checked = !data.soft;
+          document.getElementById('mt-prov-casino').checked = !data.casino;
+      });
+
       socket.on('deposit_approved_success', () => socket.emit('get_pending_deposits')); socket.on('admin_new_notif', () => socket.emit('get_pending_deposits')); socket.on('notif_msg', m => alert(m));
     }
 
     async function loadU() {
-      const r = await fetch('/api/admin/users'); const d = await r.json(); let h = ''; d.forEach(x => { h += `<tr><td><b>${x.username.toUpperCase()}</b></td><td style="color:#10b981;">🪙 ${x.coin.toLocaleString('id-ID')}</td><td><span style="background:${x.status=='AKTIF'?'#065f46':'#7f1d1d'}; padding:2px 5px; border-radius:5px; font-size:10px;">${x.status}</span></td><td><button onclick='openE(${JSON.stringify(x)})' style="padding:5px 10px; width:auto;">Manage</button></td></tr>`; });
+      const r = await fetch('/api/admin/users'); const d = await r.json(); let h = ''; d.forEach(x => { h += `<tr><td><b>${x.username.toUpperCase()}</b></td><td style="color:#34d399;">🪙 ${x.coin.toLocaleString('id-ID')}</td><td><span style="background:${x.status=='AKTIF'?'#065f46':'#7f1d1d'}; padding:4px 8px; border-radius:5px; font-size:10px; font-weight:bold;">${x.status}</span></td><td><button onclick='openE(${JSON.stringify(x)})' style="padding:5px 15px; width:auto; font-size:11px;">MANAGE</button></td></tr>`; });
       document.getElementById('u-list').innerHTML = h;
     }
 
@@ -224,14 +298,10 @@
     function saveRTP() { socket.emit('update_rtp', { roulette:document.getElementById('r-r').value, coinflip:document.getElementById('r-c').value, spinwheel:document.getElementById('r-s').value, astronaut:document.getElementById('r-a').value, slot:document.getElementById('r-slot').value }); }
     function forceAstro() { let val = document.getElementById('f-astro').value; if(!val || val <= 1) return alert("Isi angka bosku!"); socket.emit('force_astro', val); document.getElementById('f-astro').value = ''; }
 
-    // FUNGSI PANEL DEWA BARU
     function toggleJpSettings() {
         const game = document.getElementById('jp-game').value;
         const type = document.getElementById('jp-type').value;
-        
         document.getElementById('jp-custom-box').style.display = type === 'maxwin' ? 'none' : 'block';
-        
-        // Tampilkan opsi Super Maxwin kalau game-nya super & tipe maxwin
         if ((game === 'zeus_super' || game === 'princess_super') && type === 'maxwin') {
             document.getElementById('super-maxwin-box').style.display = 'block';
         } else {
@@ -242,23 +312,38 @@
     function setTargetJP() {
         const u = document.getElementById('jp-user').value.trim();
         if(!u) return alert('Username wajib diisi bosku!');
-        
-        const data = {
-            username: u,
-            gameId: document.getElementById('jp-game').value,
-            type: document.getElementById('jp-type').value,
-            multi: document.getElementById('jp-multi').value,
-            targetWin: document.getElementById('jp-win').value || 0,
-            superMode: document.getElementById('jp-super-mode').value // Kirim mode super ke server
-        };
-
+        const data = { username: u, gameId: document.getElementById('jp-game').value, type: document.getElementById('jp-type').value, multi: document.getElementById('jp-multi').value, targetWin: document.getElementById('jp-win').value || 0, superMode: document.getElementById('jp-super-mode').value };
         if (data.type === 'custom' && data.targetWin <= 0) return alert('Isi target menangnya bosku!');
-        
         if(confirm(`Yakin mau ngasih JP ke ${u.toUpperCase()}?`)) {
-            socket.emit('set_target_jp', data);
-            document.getElementById('jp-user').value = '';
-            document.getElementById('jp-win').value = '';
+            socket.emit('set_target_jp', data); document.getElementById('jp-user').value = ''; document.getElementById('jp-win').value = '';
         }
+    }
+
+    function setMtWeb() {
+        const timer = parseInt(document.getElementById('mt-web-timer').value);
+        if(timer > 0) {
+            if(confirm(`Yakin mau mengunci TOTAL web ini selama ${timer} menit? Member yang login akan terputus!`)) {
+                socket.emit('set_mt_web', timer);
+            }
+        } else {
+            if(confirm(`Yakin mau BUKA KUNCI web sekarang?`)) {
+                socket.emit('set_mt_web', 0);
+            }
+        }
+    }
+
+    function setMtProvider() {
+        const isPlayOn = document.getElementById('mt-prov-play').checked;
+        const isSoftOn = document.getElementById('mt-prov-soft').checked;
+        const isCasinoOn = document.getElementById('mt-prov-casino').checked;
+        
+        const dataMT = {
+            play: !isPlayOn,
+            soft: !isSoftOn,
+            casino: !isCasinoOn
+        };
+        
+        socket.emit('set_mt_provider', dataMT);
     }
   </script>
 </body>
